@@ -1,4 +1,4 @@
-import { ContentEvaluator } from "../interfaces/llm.interface";
+import { ContentEvaluator } from '../interfaces/llm.interface';
 
 export async function evaluateQuality({
   data,
@@ -8,7 +8,7 @@ export async function evaluateQuality({
   evaluator: ContentEvaluator;
 }) {
   if (!evaluator) {
-    throw new Error("QUALITY_LLM_REQUIRED");
+    throw new Error('QUALITY_LLM_REQUIRED');
   }
 
   const prompt = `

@@ -1,7 +1,7 @@
-import { loadSchema } from "../core/loadSchema";
-import { validateSchema } from "./schemaValidator";
-import { evaluateQuality } from "./qualityEvaluator";
-import { ContentEvaluator } from "../interfaces/llm.interface";
+import { loadSchema } from '../core/loadSchema';
+import { validateSchema } from './schemaValidator';
+import { evaluateQuality } from './qualityEvaluator';
+import { ContentEvaluator } from '../interfaces/llm.interface';
 
 export async function validate({
   type,
@@ -18,7 +18,7 @@ export async function validate({
   const schemaResult = validateSchema(schema, data);
 
   if (!schemaResult.valid) {
-    throw new Error("VALIDATION_ERROR");
+    throw new Error('VALIDATION_ERROR');
   }
 
   // 2. Quality evaluation

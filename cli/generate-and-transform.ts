@@ -1,11 +1,11 @@
-import { runGenerate } from "../src/core/runGenerate";
-import { runTransform } from "../src/core/runTransform";
+import { runGenerate } from '../src/core/runGenerate';
+import { runTransform } from '../src/core/runTransform';
 import {
   GeminiContentGenerator,
   GeminiContentEvaluator,
-} from "../src/core/geminiAdapter";
-import fs from "fs";
-import path from "path";
+} from '../src/core/geminiAdapter';
+import fs from 'fs';
+import path from 'path';
 
 async function main() {
   const generator = new GeminiContentGenerator();
@@ -13,11 +13,11 @@ async function main() {
 
   // 1. blog 생성
   const blog = await runGenerate({
-    type: "blog",
-    templateId: "seo-v1",
+    type: 'blog',
+    templateId: 'seo-v1',
     context: {
-      topic: "강아지가 혀를 내미는 이유",
-      audience: "초보 반려인",
+      topic: '강아지가 혀를 내미는 이유',
+      audience: '초보 반려인',
     },
     generator,
     evaluator,
@@ -25,9 +25,9 @@ async function main() {
 
   // 2. sns 변환
   const sns = await runTransform({
-    from: "blog",
-    to: "sns",
-    templateId: "sns-transform",
+    from: 'blog',
+    to: 'sns',
+    templateId: 'sns-transform',
     input: blog.data,
     generator,
     evaluator,
@@ -38,13 +38,13 @@ async function main() {
   const snsFile = `sns-${Date.now()}.json`;
 
   fs.writeFileSync(
-    path.join("outputs", blogFile),
-    JSON.stringify(blog, null, 2),
+    path.join('outputs', blogFile),
+    JSON.stringify(blog, null, 2)
   );
 
-  fs.writeFileSync(path.join("outputs", snsFile), JSON.stringify(sns, null, 2));
+  fs.writeFileSync(path.join('outputs', snsFile), JSON.stringify(sns, null, 2));
 
-  console.log("Saved:", blogFile, snsFile);
+  console.log('Saved:', blogFile, snsFile);
 }
 
 main();
