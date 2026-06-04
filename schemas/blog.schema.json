@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["title", "summary", "body_markdown"],
+  "additionalProperties": false,
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 120
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 30,
+      "maxLength": 200
+    },
+    "body_markdown": {
+      "type": "string",
+      "minLength": 300
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 30
+      },
+      "minItems": 1,
+      "maxItems": 10
+    },
+    "category": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 50
+    },
+    "seo": {
+      "type": "object",
+      "required": ["meta_title", "meta_description"],
+      "additionalProperties": false,
+      "properties": {
+        "meta_title": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 70
+        },
+        "meta_description": {
+          "type": "string",
+          "minLength": 50,
+          "maxLength": 160
+        }
+      }
+    }
+  }
+}

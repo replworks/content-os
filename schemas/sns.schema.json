@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["platform", "content"],
+  "additionalProperties": false,
+  "properties": {
+    "platform": {
+      "type": "string",
+      "enum": ["twitter", "facebook", "instagram", "linkedin"]
+    },
+    "content": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 300
+    },
+    "hashtags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^#.+"
+      },
+      "minItems": 0,
+      "maxItems": 10
+    },
+    "source_ref": {
+      "type": "string",
+      "description": "원본 콘텐츠 ID (예: blog id)"
+    }
+  }
+}
