@@ -1,8 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { runGenerate } from "../src/core/runGenerate";
+import { MockContentGenerator } from "../tests/mocks/mockContentGenerator";
+import { MockContentEvaluator } from "../tests/mocks/mockContentEvaluator";
 
 describe("Pipeline", () => {
   it("should generate validated blog content", async () => {
+    const generator = new MockContentGenerator();
+    const evaluator = new MockContentEvaluator();
+
     const result = await runGenerate({
       type: "blog",
       templateId: "seo-v1",
@@ -10,6 +15,8 @@ describe("Pipeline", () => {
         topic: "강아지가 혀를 내미는 이유",
         audience: "초보 반려인",
       },
+      generator,
+      evaluator,
     });
 
     expect(result.data).toBeDefined();

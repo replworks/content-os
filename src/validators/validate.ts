@@ -1,29 +1,33 @@
 import { loadSchema } from "../core/loadSchema";
 import { validateSchema } from "./schemaValidator";
 import { evaluateQuality } from "./qualityEvaluator";
-import { buildMeta } from "./metaBuilder";
+import { ContentEvaluator } from "../interfaces/llm.interface";
 
-export async function validate({ type, data }: { type: string; data: any }) {
+export async function validate({
+  type,
+  data,
+  evaluator,
+}: {
+  type: string;
+  data: any;
+  evaluator: ContentEvaluator; // ✅ 필수로 변경
+}) {
   const schema = loadSchema(type);
 
-  // 1. schema validation
+  // 1. Schema validation (Hard fail)
   const schemaResult = validateSchema(schema, data);
 
   if (!schemaResult.valid) {
-    return {
-      valid: false,
-      errors: schemaResult.errors,
-    };
+    throw new Error("VALIDATION_ERROR");
   }
 
-  // 2. quality evaluation
-  const quality = await evaluateQuality(data);
-
-  // 3. meta 생성
-  const meta = buildMeta(quality);
+  // 2. Quality evaluation
+  const quality = await evaluateQuality({
+    data,
+    evaluator,
+  });
 
   return {
-    valid: true,
-    meta,
+    meta: quality,
   };
 }
