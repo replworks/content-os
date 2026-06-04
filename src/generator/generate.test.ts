@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { generate } from './generate';
-import { ContentGenerator } from '../interfaces/llm.interface';
 import { MockContentGenerator } from '../../tests/mocks/mockContentGenerator';
 
 describe('Generator', () => {

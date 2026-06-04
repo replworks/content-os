@@ -1,3 +1,4 @@
+/* eslint-disable preserve-caught-error */
 export function parseJSON(text: string) {
   try {
     return JSON.parse(text);
