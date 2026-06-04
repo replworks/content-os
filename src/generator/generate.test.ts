@@ -1,8 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { generate } from "./generate";
+import { ContentGenerator } from "../interfaces/llm.interface";
+import { MockContentGenerator } from "../../tests/mocks/mockContentGenerator";
 
 describe("Generator", () => {
   it("should generate blog json", async () => {
+    const contentGenerator: MockContentGenerator = new MockContentGenerator();
+
     const result = await generate({
       type: "blog",
       templateId: "seo-v1",
@@ -10,6 +14,7 @@ describe("Generator", () => {
         topic: "강아지가 혀를 내미는 이유",
         audience: "초보 반려인",
       },
+      generator: contentGenerator,
     });
 
     expect(result).toBeDefined();

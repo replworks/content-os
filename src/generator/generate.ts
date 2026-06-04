@@ -1,18 +1,24 @@
-import { model } from "../core/gemini";
 import { loadSchema } from "../core/loadSchema";
 import { loadTemplate } from "../core/loadTemplate";
 import { buildPrompt } from "./promptBuilder";
 import { parseJSON } from "../utils/parseJSON";
+import { ContentGenerator } from "../interfaces/llm.interface";
 
 export async function generate({
   type,
   templateId,
   context,
+  generator,
 }: {
   type: string;
   templateId: string;
   context: any;
+  generator: ContentGenerator;
 }) {
+  if (!generator || typeof generator.generate !== "function") {
+    throw new Error("ContentGenerator with a generate() function is required");
+  }
+
   const schema = loadSchema(type);
   const template = loadTemplate(type, templateId);
 
@@ -22,9 +28,9 @@ export async function generate({
     context,
   });
 
-  const result = await model.generateContent(prompt);
+  const text = await generator.generate(prompt);
 
-  const text = result.response.text();
+  const data = parseJSON(text);
 
-  return parseJSON(text);
+  return data;
 }
