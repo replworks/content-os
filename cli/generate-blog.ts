@@ -1,9 +1,9 @@
-import { generate } from "../src/generator/generate";
+import { runGenerate } from "../src/core/runGenerate";
 import fs from "fs";
 import path from "path";
 
 async function main() {
-  const result = await generate({
+  const result = await runGenerate({
     type: "blog",
     templateId: "seo-v1",
     context: {
