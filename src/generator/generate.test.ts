@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { generate } from "../src/generator/generate";
+import { generate } from "./generate";
 
 describe("Generator", () => {
   it("should generate blog json", async () => {
