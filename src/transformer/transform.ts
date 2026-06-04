@@ -1,9 +1,9 @@
-import { model } from "../core/gemini";
-import { loadTemplate } from "../core/loadTemplate";
-import { loadSchema } from "../core/loadSchema";
-import { buildTransformPrompt } from "./promptBuilder";
-import { parseJSON } from "../utils/parseJSON";
+import { model } from '../core/gemini';
+import { loadTemplate } from '../core/loadTemplate';
+import { buildTransformPrompt } from './promptBuilder';
+import { parseJSON } from '../utils/parseJSON';
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 export async function transform({
   from,
   to,
@@ -16,7 +16,6 @@ export async function transform({
   input: any;
 }) {
   const template = loadTemplate(to, templateId);
-  const schema = loadSchema(to);
 
   const prompt = buildTransformPrompt({
     template,

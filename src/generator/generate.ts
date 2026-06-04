@@ -1,8 +1,8 @@
-import { loadSchema } from "../core/loadSchema";
-import { loadTemplate } from "../core/loadTemplate";
-import { buildPrompt } from "./promptBuilder";
-import { parseJSON } from "../utils/parseJSON";
-import { ContentGenerator } from "../interfaces/llm.interface";
+import { loadSchema } from '../core/loadSchema';
+import { loadTemplate } from '../core/loadTemplate';
+import { buildPrompt } from './promptBuilder';
+import { parseJSON } from '../utils/parseJSON';
+import { ContentGenerator } from '../interfaces/llm.interface';
 
 export async function generate({
   type,
@@ -15,8 +15,8 @@ export async function generate({
   context: any;
   generator: ContentGenerator;
 }) {
-  if (!generator || typeof generator.generate !== "function") {
-    throw new Error("ContentGenerator with a generate() function is required");
+  if (!generator || typeof generator.generate !== 'function') {
+    throw new Error('ContentGenerator with a generate() function is required');
   }
 
   const schema = loadSchema(type);
