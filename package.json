@@ -12,7 +12,8 @@
     "lint": "eslint \"**/*.{ts,tsx}\"",
     "lint:fix": "eslint \"**/*.{ts,tsx}\" --fix",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
-    "test": "vitest --bail"
+    "format:check": "prettier --check \"**/*.{ts,tsx}\"",
+    "test": "vitest --bail=1"
   },
   "repository": {
     "type": "git",
