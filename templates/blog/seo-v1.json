@@ -1,0 +1,25 @@
+{
+  "id": "seo-v1",
+  "type": "blog",
+  "intent": "검색 유입을 극대화하는 정보성 콘텐츠",
+  "structure": [
+    "hook",
+    "problem_definition",
+    "core_explanation",
+    "detailed_sections",
+    "practical_tips",
+    "summary"
+  ],
+  "writing_rules": [
+    "첫 문장은 독자의 궁금증을 자극해야 한다",
+    "각 섹션은 명확한 소제목을 포함한다",
+    "문장은 짧고 명확하게 작성한다",
+    "불필요한 감정 표현을 제거한다",
+    "정보 전달을 최우선으로 한다"
+  ],
+  "constraints": {
+    "min_sections": 5,
+    "target_length": "long",
+    "keyword_inclusion": true
+  }
+}

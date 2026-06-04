@@ -1,0 +1,14 @@
+{
+  "id": "list-v1",
+  "type": "blog",
+  "intent": "가독성이 높은 리스트형 콘텐츠",
+  "structure": ["hook", "list_intro", "list_items", "summary"],
+  "writing_rules": [
+    "리스트는 최소 5개 이상 포함한다",
+    "각 항목은 동일한 구조로 작성한다",
+    "항목 제목은 명확하고 짧게 작성한다",
+    "각 항목은 독립적으로 이해 가능해야 한다",
+    "불필요한 중복 설명을 제거한다"
+  ],
+  "constraints": { "min_items": 5, "max_items": 15, "target_length": "medium" }
+}
