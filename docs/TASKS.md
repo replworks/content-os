@@ -134,7 +134,7 @@ TS는 다음만 책임진다:
 ## 9.1 Config System (추천)
 
 * [x] threshold / count / topK config 분리
-* [ ] 환경별 설정 (dev / prod)
+* [x] 환경별 설정 (dev / prod)
 
 ---
 

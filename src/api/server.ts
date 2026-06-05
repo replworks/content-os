@@ -1,4 +1,5 @@
 import Fastify, { type FastifyReply } from 'fastify';
+import { ENV } from '../config/env.ts';
 import { runGenerate } from '../core/runGenerate.ts';
 import { runTransform } from '../core/runTransform.ts';
 import { AppError, ERROR_CODES } from '../core/errors.ts';
@@ -234,6 +235,14 @@ const start = async () => {
   });
 
   try {
+    fastify.log.info(
+      {
+        code: 'CONFIG_LOADED',
+        env: ENV,
+      },
+      'config:loaded'
+    );
+
     await fastify.listen({
       port: 3000,
       host: '0.0.0.0',
