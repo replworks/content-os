@@ -2,6 +2,7 @@ import { transform } from '../transformer/transform.ts';
 import { hardFilter } from '../validators/hardFilter.ts';
 import { validate } from '../validators/validate.ts';
 import { getQualityThreshold } from '../config/quality.ts';
+import { mergeContext } from '../utils/context.ts';
 import type {
   ContentGenerator,
   ContentEvaluator,
@@ -15,7 +16,8 @@ export async function runTransform<TType extends ContentType>({
   to,
   templateId,
   input,
-  context,
+  context = {},
+  externalContext,
   generator,
   evaluator,
   traceId,
@@ -25,6 +27,7 @@ export async function runTransform<TType extends ContentType>({
   templateId: string;
   input: unknown;
   context?: Record<string, unknown>;
+  externalContext?: Record<string, any>;
   generator: ContentGenerator;
   evaluator: ContentEvaluator;
   traceId?: string;
@@ -33,12 +36,14 @@ export async function runTransform<TType extends ContentType>({
   logInfo('runTransform:start', { traceId: resolvedTraceId, from, to });
 
   try {
+    const mergedContext = mergeContext(context, externalContext);
+
     const data = await transform<TType>({
       from,
       to,
       templateId,
       input,
-      context: context ?? {},
+      context: mergedContext,
       generator,
       traceId: resolvedTraceId,
     });
