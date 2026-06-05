@@ -151,8 +151,15 @@ context = mergeContext(base, external)
 
 ## 9.3 Selection 전략 확장 (선택)
 
-* [ ] custom scoring hook
-* [ ] quality 외 추가 점수 반영 가능 구조
+* [x] optional selection hook
+* [x] candidates mode output 구조
+
+---
+
+### (Optional / External Usage)
+
+* [ ] custom scoring hook (Laravel에서 override)
+* [ ] quality 외 추가 점수 반영 구조 (CTR, engagement 등)
 
 ---
 

@@ -44,6 +44,15 @@ export type Envelope<T> = {
   meta: Meta;
 };
 
+export type CandidateSelectionResult<T> = {
+  type: ContentType;
+  candidates: Array<{
+    data: T;
+    meta: Meta;
+  }>;
+  defaultWinnerIndex: number;
+};
+
 export type GenerateInput = {
   type: ContentType;
   templateId: string;

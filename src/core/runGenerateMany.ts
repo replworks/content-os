@@ -1,5 +1,4 @@
 import { generateMany } from '../generator/generateMany.ts';
-import { selectBest } from '../generator/selector.ts';
 import { validate } from '../validators/validate.ts';
 import { getQualityThreshold, getGenerationConfig } from '../config/index.ts';
 import { mergeContext } from '../utils/context.ts';
@@ -9,7 +8,71 @@ import type {
 } from '../interfaces/llm.interface.ts';
 import { AppError, ERROR_CODES } from './errors.ts';
 import { logInfo } from './logger.ts';
-import type { ContentDataMap, ContentType, Envelope } from './types.ts';
+import type {
+  ContentDataMap,
+  ContentType,
+  Envelope,
+  CandidateSelectionResult,
+} from './types.ts';
+
+export type RunGenerateManyMode = 'single' | 'candidates';
+
+export type SelectionFn<TType extends ContentType> = (
+  candidates: Array<{
+    data: ContentDataMap[TType];
+    meta: Envelope<ContentDataMap[TType]>['meta'];
+  }>
+) => number;
+
+export type RunGenerateManyInput<TType extends ContentType> = {
+  type: TType;
+  templateId: string;
+  context: Record<string, unknown>;
+  externalContext?: Record<string, any>;
+  generator: ContentGenerator;
+  evaluator: ContentEvaluator;
+  traceId?: string;
+  count?: number;
+  topK?: number;
+  mode?: RunGenerateManyMode;
+  selectionFn?: SelectionFn<TType>;
+};
+
+function getDefaultWinnerIndex<TType extends ContentType>(
+  candidates: Array<{
+    data: ContentDataMap[TType];
+    meta: Envelope<ContentDataMap[TType]>['meta'];
+  }>
+): number {
+  return candidates.reduce((bestIndex, candidate, index) => {
+    const currentQuality = candidate.meta.quality_score;
+    const bestQuality = candidates[bestIndex].meta.quality_score;
+
+    if (currentQuality > bestQuality) {
+      return index;
+    }
+
+    return bestIndex;
+  }, 0);
+}
+
+function normalizeWinnerIndex(
+  index: number,
+  length: number,
+  fallback: number
+): number {
+  if (!Number.isFinite(index)) {
+    return fallback;
+  }
+
+  const normalized = Math.trunc(index);
+
+  if (normalized < 0 || normalized >= length) {
+    return fallback;
+  }
+
+  return normalized;
+}
 
 export async function runGenerateMany<TType extends ContentType>({
   type,
@@ -21,19 +84,14 @@ export async function runGenerateMany<TType extends ContentType>({
   count,
   externalContext,
   topK,
-}: {
-  type: TType;
-  templateId: string;
-  context: Record<string, unknown>;
-  externalContext?: Record<string, any>;
-  generator: ContentGenerator;
-  evaluator: ContentEvaluator;
-  traceId?: string;
-  count?: number;
-  topK?: number;
-}): Promise<Envelope<ContentDataMap[TType]>> {
+  mode = 'single',
+  selectionFn,
+}: RunGenerateManyInput<TType>): Promise<
+  | Envelope<ContentDataMap[TType]>
+  | CandidateSelectionResult<ContentDataMap[TType]>
+> {
   const resolvedTraceId = traceId ?? Math.random().toString(36).slice(2);
-  const { defaultCount, defaultTopK } = getGenerationConfig();
+  const { count: defaultCount, topK: defaultTopK } = getGenerationConfig();
   const finalCount = count ?? defaultCount;
   const finalTopK = topK ?? defaultTopK;
 
@@ -43,6 +101,7 @@ export async function runGenerateMany<TType extends ContentType>({
     templateId,
     count: finalCount,
     topK: finalTopK,
+    mode,
   });
 
   try {
@@ -68,7 +127,7 @@ export async function runGenerateMany<TType extends ContentType>({
       );
     }
 
-    const validated = await Promise.all(
+    const validated = (await Promise.all(
       rankedCandidates.map(async (candidate) => {
         const result = await validate({
           type,
@@ -92,30 +151,48 @@ export async function runGenerateMany<TType extends ContentType>({
           meta: result.meta,
         };
       })
+    )) as Array<{
+      data: ContentDataMap[TType];
+      meta: Envelope<ContentDataMap[TType]>['meta'];
+    } | null>;
+
+    const filtered = validated.filter(
+      (
+        candidate
+      ): candidate is {
+        data: ContentDataMap[TType];
+        meta: Envelope<ContentDataMap[TType]>['meta'];
+      } => candidate !== null
     );
 
-    const bestCandidate = selectBest(
-      validated.filter(
-        (
-          candidate
-        ): candidate is {
-          data: ContentDataMap[TType];
-          meta: Envelope<ContentDataMap[TType]>['meta'];
-        } => candidate !== null
-      )
-    );
-
-    if (!bestCandidate) {
+    if (filtered.length === 0) {
       throw new AppError(
         ERROR_CODES.LOW_QUALITY,
         'No candidates passed quality threshold'
       );
     }
 
+    const defaultWinnerIndex = getDefaultWinnerIndex(filtered);
+    const selectedIndex = selectionFn
+      ? normalizeWinnerIndex(
+          selectionFn(filtered),
+          filtered.length,
+          defaultWinnerIndex
+        )
+      : defaultWinnerIndex;
+
+    if (mode === 'candidates') {
+      return {
+        type,
+        candidates: filtered,
+        defaultWinnerIndex,
+      };
+    }
+
     return {
       type,
-      data: bestCandidate.data,
-      meta: bestCandidate.meta,
+      data: filtered[selectedIndex].data,
+      meta: filtered[selectedIndex].meta,
     };
   } catch (err) {
     if (err instanceof AppError) {
