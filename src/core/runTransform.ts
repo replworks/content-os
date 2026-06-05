@@ -1,6 +1,7 @@
 import { transform } from '../transformer/transform.ts';
 import { hardFilter } from '../validators/hardFilter.ts';
 import { validate } from '../validators/validate.ts';
+import { getQualityThreshold } from '../config/quality.ts';
 import type {
   ContentGenerator,
   ContentEvaluator,
@@ -60,6 +61,15 @@ export async function runTransform<TType extends ContentType>({
 
   if (!result.meta) {
     throw new AppError(ERROR_CODES.VALIDATION_ERROR);
+  }
+
+  const threshold = getQualityThreshold(to);
+
+  if (result.meta.quality_score < threshold) {
+    throw new AppError(
+      ERROR_CODES.LOW_QUALITY,
+      `Quality score ${result.meta.quality_score} below threshold ${threshold}`
+    );
   }
 
   return {

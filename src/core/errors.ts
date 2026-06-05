@@ -5,6 +5,7 @@ export const ERROR_CODES = {
   SCHEMA_NOT_FOUND: 'SCHEMA_NOT_FOUND',
   TEMPLATE_NOT_FOUND: 'TEMPLATE_NOT_FOUND',
   HARD_FILTER_FAILED: 'HARD_FILTER_FAILED',
+  LOW_QUALITY: 'LOW_QUALITY',
 } as const;
 
 export class AppError extends Error {

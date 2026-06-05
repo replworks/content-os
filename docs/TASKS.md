@@ -137,10 +137,10 @@ LLM 없이 전체 테스트 가능
 
 ### 작업
 
-* [ ] config 기반 quality_score threshold 도입
-* [ ] threshold 미달 시 AppError 발생
-* [ ] 콘텐츠 discard 처리
-* [ ] threshold 테스트 추가
+* [x] config 기반 quality_score threshold 도입
+* [x] threshold 미달 시 AppError 발생
+* [x] 콘텐츠 discard 처리
+* [x] threshold 테스트 추가
 
 ---
 
