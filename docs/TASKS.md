@@ -140,8 +140,8 @@ TS는 다음만 책임진다:
 
 ## 9.2 Context Hook (🔥 중요)
 
-* [ ] 외부 feedback context 주입 가능하도록 구조 정리
-* [ ] context merge 유틸
+* [x] 외부 feedback context 주입 가능하도록 구조 정리
+* [x] context merge 유틸
 
 ```ts
 context = mergeContext(base, external)
@@ -181,7 +181,7 @@ context = mergeContext(base, external)
 * [x] multi-generation 동작
 * [x] 테스트 통과
 * [x] traceId 기반 디버깅
-* [ ] context injection hook 존재
+* [x] context injection hook 존재
 
 ---
 

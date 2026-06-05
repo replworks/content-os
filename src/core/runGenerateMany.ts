@@ -2,6 +2,7 @@ import { generateMany } from '../generator/generateMany.ts';
 import { selectBest } from '../generator/selector.ts';
 import { validate } from '../validators/validate.ts';
 import { getQualityThreshold } from '../config/quality.ts';
+import { mergeContext } from '../utils/context.ts';
 import type {
   ContentGenerator,
   ContentEvaluator,
@@ -20,11 +21,13 @@ export async function runGenerateMany<TType extends ContentType>({
   evaluator,
   traceId,
   count,
+  externalContext,
   topK = DEFAULT_TOP_COUNT,
 }: {
   type: TType;
   templateId: string;
   context: Record<string, unknown>;
+  externalContext?: Record<string, any>;
   generator: ContentGenerator;
   evaluator: ContentEvaluator;
   traceId?: string;
@@ -40,10 +43,12 @@ export async function runGenerateMany<TType extends ContentType>({
   });
 
   try {
+    const mergedContext = mergeContext(context, externalContext);
+
     const candidates = await generateMany<TType>({
       type,
       templateId,
-      context,
+      context: mergedContext,
       generator,
       traceId: resolvedTraceId,
       count,
