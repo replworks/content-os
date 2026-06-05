@@ -1,15 +1,10 @@
-# Content OS — Context
+# Content OS - Context
 
----
+## 1. Purpose
 
-## 1. Overview
+Context is arbitrary JSON passed into prompt builders. It is not validated by output schema.
 
-Context is the JSON input passed to prompt builders.
-It is not validated by output schema; the generated content is validated instead.
-
----
-
-## 2. Code behavior
+## 2. Generate Context
 
 `generate()` accepts:
 
@@ -19,8 +14,13 @@ It is not validated by output schema; the generated content is validated instead
   templateId: string;
   context: any;
   generator: ContentGenerator;
+  traceId?: string;
 }
 ```
+
+The context is passed directly to the generation prompt builder.
+
+## 3. Transform Context
 
 `transform()` accepts:
 
@@ -32,59 +32,31 @@ It is not validated by output schema; the generated content is validated instead
   input: any;
   context: any;
   generator: ContentGenerator;
+  traceId?: string;
 }
 ```
 
-`transform()` passes `context` to the prompt builder as:
+The actual prompt context is:
 
-```ts
-{ source: input, ...context }
-```
+* `source: input`
+* all fields from `context` spread after `source`
 
----
+Because `context` is spread last, any `source` key inside `context` overrides the injected `source` value.
 
-## 3. Rules
+## 4. Rules
 
-* `context` is arbitrary JSON.
-* Code does not enforce a fixed context schema.
+* `context` is not schema-validated.
+* `context` can be any JSON-compatible value.
 * The prompt builder serializes `context` into the LLM prompt.
-* Output schema validation is separate from context shape.
+* `transform()` always includes `source: input` in the prompt context.
 
----
+## 5. Practical Use
 
-## 4. Common usage
+Common examples are free-form and not contractually enforced, for example:
 
-The repository uses examples such as:
+* topic
+* audience
+* tone
+* goal
 
-```json
-{
-  "topic": "강아지가 혀를 내미는 이유",
-  "audience": "초보 반려인"
-}
-```
-
-This is a common pattern, but not a required contract.
-
----
-
-## 5. Transform context
-
-For transform operations, the actual prompt context is:
-
-```json
-{
-  "source": { ...input },
-  ...context
-}
-```
-
-The `source` field is required by the current transform prompt builder.
-
----
-
-## 6. Context vs template
-
-* `context` defines what to write.
-* `template` defines how to write it.
-
-Prompt builders combine `schema`, `template`, and `context`.
+These fields are usage patterns only, not required fields.

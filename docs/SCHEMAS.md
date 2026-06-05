@@ -1,58 +1,67 @@
-# Content OS — Schemas
-
----
+# Content OS - Schemas
 
 ## 1. Purpose
 
-Schemas define the `data` payload shape for generated content.
+Schemas define the `data` payload returned by generation and transformation.
 They are loaded from `schemas/<type>.schema.json`.
 
----
+`loadSchema(type)` reads the matching file from `schemas/` and throws `SCHEMA_NOT_FOUND` if the file is missing.
 
-## 2. Loading
+## 2. Schema Validation
 
-`loadSchema(type)`:
+Validation uses AJV.
 
-* reads `schemas/<type>.schema.json`
-* throws if the file does not exist
+* schema validation happens before quality evaluation
+* schema failures return `{ valid: false, errors }`
+* `runGenerate()` and `runTransform()` convert invalid validation results into `VALIDATION_ERROR`
 
----
+## 3. Supported Schemas
 
-## 3. Supported schemas
-
-### blog
+### `blog`
 
 File: `schemas/blog.schema.json`
 
-* required: `title`, `summary`, `body_markdown`
-* additionalProperties: `false`
+```json
+{
+  "type": "object",
+  "required": ["title", "summary", "body_markdown"],
+  "additionalProperties": false
+}
+```
+
+Properties:
+
 * `title`: string, 10-120 chars
 * `summary`: string, 30-200 chars
 * `body_markdown`: string, min 300 chars
-* optional `tags`: array of 1-10 strings, each 2-30 chars
-* optional `category`: string, 2-50 chars
-* optional `seo`: object with `meta_title` and `meta_description`
+* `tags`: optional array of 1-10 strings, each 2-30 chars
+* `category`: optional string, 2-50 chars
+* `seo`: optional object with `meta_title` and `meta_description`
   * `meta_title`: string, 10-70 chars
   * `meta_description`: string, 50-160 chars
 
----
-
-### sns
+### `sns`
 
 File: `schemas/sns.schema.json`
 
-* required: `platform`, `content`
-* additionalProperties: `false`
+```json
+{
+  "type": "object",
+  "required": ["platform", "content"],
+  "additionalProperties": false
+}
+```
+
+Properties:
+
 * `platform`: enum of `twitter`, `facebook`, `instagram`, `linkedin`
 * `content`: string, 10-300 chars
-* optional `hashtags`: array of 0-10 strings matching `^#.+`
-* optional `source_ref`: string
+* `hashtags`: optional array of 0-10 strings matching `^#.+`
+* `source_ref`: optional string
 
----
+## 4. Actual Requirements
 
-## 4. Rules
-
-* `additionalProperties` is false for supported schemas.
+* `additionalProperties` is `false` in both supported schemas.
 * Required fields must be present.
-* Field constraints are enforced by AJV.
-* Unsupported types are not defined in the repository.
+* Type and length constraints are enforced by AJV.
+* No other schema types are defined in the repository.
