@@ -2,7 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AppError, ERROR_CODES } from './errors.ts';
 import { runLLMTask } from './runLLMTask.ts';
 import { runGenerate } from './runGenerate.ts';
+import { runTransform } from './runTransform.ts';
 import * as validateModule from '../validators/validate.ts';
+import * as hardFilterModule from '../validators/hardFilter.ts';
 
 describe('AppError', () => {
   it('should set code and message correctly', () => {
@@ -15,7 +17,7 @@ describe('AppError', () => {
   });
 });
 
-describe('standardized errors', () => {
+describe('LLM errors', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
@@ -39,14 +41,24 @@ describe('standardized errors', () => {
       message: ERROR_CODES.JSON_PARSE_ERROR,
     });
   });
+});
 
-  it('should throw VALIDATION_ERROR when runGenerate validation fails', async () => {
+describe('Generate errors', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('should throw HARD_FILTER_FAILED when runGenerate hard filter fails', async () => {
     const mockGenerator = {
       generate: vi.fn().mockResolvedValue(JSON.stringify({ title: 'ok' })),
     };
-    vi.spyOn(validateModule, 'validate').mockResolvedValue({
+    vi.spyOn(hardFilterModule, 'hardFilter').mockReturnValue({
       valid: false,
-      errors: [{ message: 'invalid' }] as any,
+      reason: 'TOO_SHORT',
+    });
+    vi.spyOn(validateModule, 'validate').mockResolvedValue({
+      valid: true,
+      meta: {},
     } as any);
 
     await expect(
@@ -58,8 +70,45 @@ describe('standardized errors', () => {
         evaluator: { evaluate: vi.fn() } as any,
       })
     ).rejects.toMatchObject({
-      code: ERROR_CODES.VALIDATION_ERROR,
-      message: ERROR_CODES.VALIDATION_ERROR,
+      code: ERROR_CODES.HARD_FILTER_FAILED,
+      message: 'TOO_SHORT',
+    });
+  });
+});
+
+describe('Transform errors', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('should throw HARD_FILTER_FAILED when runTransform hard filter fails', async () => {
+    const mockGenerator = {
+      generate: vi.fn().mockResolvedValue(JSON.stringify({ content: 'ok' })),
+    };
+
+    vi.spyOn(hardFilterModule, 'hardFilter').mockReturnValue({
+      valid: false,
+      reason: 'FORBIDDEN_PATTERN',
+    });
+
+    vi.spyOn(validateModule, 'validate').mockResolvedValue({
+      valid: true,
+      meta: {},
+    } as any);
+
+    await expect(
+      runTransform({
+        from: 'blog',
+        to: 'sns',
+        templateId: 'sns-transform',
+        input: { title: 'source content' },
+        context: {},
+        generator: mockGenerator as any,
+        evaluator: { evaluate: vi.fn() } as any,
+      })
+    ).rejects.toMatchObject({
+      code: ERROR_CODES.HARD_FILTER_FAILED,
+      message: 'FORBIDDEN_PATTERN',
     });
   });
 });

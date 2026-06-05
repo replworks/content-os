@@ -1,4 +1,5 @@
 import { transform } from '../transformer/transform.ts';
+import { hardFilter } from '../validators/hardFilter.ts';
 import { validate } from '../validators/validate.ts';
 import type {
   ContentGenerator,
@@ -36,6 +37,12 @@ export async function runTransform({
     generator,
     traceId,
   });
+
+  const filter = hardFilter(data);
+
+  if (!filter.valid) {
+    throw new AppError(ERROR_CODES.HARD_FILTER_FAILED, filter.reason);
+  }
 
   const result = await validate({
     type: to,

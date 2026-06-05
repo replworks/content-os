@@ -4,6 +4,7 @@ export const ERROR_CODES = {
   LLM_ERROR: 'LLM_ERROR',
   SCHEMA_NOT_FOUND: 'SCHEMA_NOT_FOUND',
   TEMPLATE_NOT_FOUND: 'TEMPLATE_NOT_FOUND',
+  HARD_FILTER_FAILED: 'HARD_FILTER_FAILED',
 } as const;
 
 export class AppError extends Error {
