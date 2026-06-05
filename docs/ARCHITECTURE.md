@@ -19,6 +19,7 @@ The runtime flow is:
 
 ```text
 runGenerate -> generate -> runLLMTask -> hardFilter -> validate -> envelope
+runGenerateMany -> generateMany -> hardFilter -> topK -> validate -> envelope
 runTransform -> transform -> runLLMTask -> hardFilter -> validate -> envelope
 ```
 
@@ -49,6 +50,20 @@ runTransform -> transform -> runLLMTask -> hardFilter -> validate -> envelope
 * validates data against `schemas/<to>.schema.json`
 * evaluates quality with `evaluator.evaluate(prompt)`
 * returns `{ type: to, data, meta }`
+
+### Multi-generation flow
+
+`runGenerateMany({ type, templateId, context, generator, evaluator, count, topK })`
+
+* generates `count` candidates using `generate()`
+* applies `hardFilter()` to each candidate
+* sorts remaining candidates by a cheap local score
+* keeps the top `topK` candidates
+* runs `validate()` only for the selected top `topK` candidates
+* selects the final winner by highest `quality_score`
+* defaults:
+  * `count = 5`
+  * `topK = 2`
 
 ## 3. Retry Logic
 

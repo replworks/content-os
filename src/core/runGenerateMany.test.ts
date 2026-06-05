@@ -1,0 +1,154 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+vi.mock('../generator/generateMany.ts', () => ({
+  generateMany: vi.fn(),
+}));
+
+vi.mock('../validators/validate.ts', () => ({
+  validate: vi.fn(),
+}));
+
+import { generateMany } from '../generator/generateMany.ts';
+import { validate } from '../validators/validate.ts';
+import { runGenerateMany } from './runGenerateMany.ts';
+
+describe('runGenerateMany', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should validate only top K candidates and return the best quality result', async () => {
+    vi.mocked(generateMany).mockResolvedValue([
+      {
+        data: {
+          title: 'Candidate A',
+          summary: 'Candidate A summary that is definitely long enough.',
+          body_markdown: 'A'.repeat(320),
+        },
+        cheapScore: 10,
+      },
+      {
+        data: {
+          title: 'Candidate B',
+          summary: 'Candidate B summary that is definitely long enough.',
+          body_markdown: 'B'.repeat(320),
+        },
+        cheapScore: 50,
+      },
+      {
+        data: {
+          title: 'Candidate C',
+          summary: 'Candidate C summary that is definitely long enough.',
+          body_markdown: 'C'.repeat(320),
+        },
+        cheapScore: 40,
+      },
+    ] as never);
+
+    vi.mocked(validate)
+      .mockResolvedValueOnce({
+        valid: true,
+        meta: {
+          quality_score: 70,
+          dimensions: {
+            readability: 70,
+            relevance: 70,
+            tone_match: 70,
+            originality: 70,
+          },
+          warnings: [],
+        },
+      } as never)
+      .mockResolvedValueOnce({
+        valid: true,
+        meta: {
+          quality_score: 85,
+          dimensions: {
+            readability: 85,
+            relevance: 85,
+            tone_match: 85,
+            originality: 85,
+          },
+          warnings: [],
+        },
+      } as never);
+
+    const result = await runGenerateMany({
+      type: 'blog',
+      templateId: 'seo-v1',
+      context: {
+        topic: '강아지가 혀를 내미는 이유',
+      },
+      generator: {
+        generate: vi.fn(),
+      },
+      evaluator: {
+        evaluate: vi.fn(),
+      },
+      traceId: 'trace-123',
+      count: 5,
+      topK: 2,
+    });
+
+    expect(generateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'blog',
+        templateId: 'seo-v1',
+        traceId: 'trace-123',
+        count: 5,
+      })
+    );
+    expect(validate).toHaveBeenCalledTimes(2);
+    expect(result.type).toBe('blog');
+    expect(result.meta.quality_score).toBe(85);
+    expect(result.data.title).toBe('Candidate C');
+  });
+
+  it('should throw LOW_QUALITY when no top candidate passes threshold', async () => {
+    vi.mocked(generateMany).mockResolvedValue([
+      {
+        data: {
+          title: 'Candidate A',
+          summary: 'Candidate A summary that is definitely long enough.',
+          body_markdown: 'A'.repeat(320),
+        },
+        cheapScore: 10,
+      },
+    ] as never);
+
+    vi.mocked(validate).mockResolvedValue({
+      valid: true,
+      meta: {
+        quality_score: 40,
+        dimensions: {
+          readability: 40,
+          relevance: 40,
+          tone_match: 40,
+          originality: 40,
+        },
+        warnings: [],
+      },
+    } as never);
+
+    await expect(
+      runGenerateMany({
+        type: 'blog',
+        templateId: 'seo-v1',
+        context: {
+          topic: '강아지가 혀를 내미는 이유',
+        },
+        generator: {
+          generate: vi.fn(),
+        },
+        evaluator: {
+          evaluate: vi.fn(),
+        },
+        traceId: 'trace-456',
+        count: 5,
+        topK: 2,
+      })
+    ).rejects.toMatchObject({
+      code: 'LOW_QUALITY',
+    });
+  });
+});
