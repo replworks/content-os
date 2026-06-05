@@ -58,6 +58,8 @@ content-os/
 ├── templates/
 ├── outputs/
 ├── tests/
+├── docs/
+│   └── INTEGRATION.md
 ```
 
 ---
@@ -159,7 +161,7 @@ export const QUALITY_THRESHOLD = {
 
 ## ⚙️ Config System (Environment-based Settings)
 
-Content OS는 실행 파라미터를 코드에 하드코딩하지 않고
+Content OS는 실행 파라미터를 코드에 하드코딩하지 않고  
 **환경별 설정(config)** 으로 관리한다.
 
 ---
@@ -196,8 +198,6 @@ export const config = {
 
 ### 🌍 환경별 설정
 
-환경에 따라 자동으로 config가 변경된다.
-
 ```bash
 NODE_ENV=development
 NODE_ENV=production
@@ -214,10 +214,6 @@ export const devConfig = {
 };
 ```
 
-👉 빠른 테스트 / 저비용
-
----
-
 #### prod
 
 ```ts
@@ -229,23 +225,17 @@ export const prodConfig = {
 };
 ```
 
-👉 품질 최적화
-
 ---
 
 ### 🔌 실행 시 동작
 
 ```ts
 import { config } from "../config";
-```
 
-```ts
 const threshold = config.qualityThreshold[type];
 const count = config.generation.count;
 const topK = config.generation.topK;
 ```
-
-👉 모든 파이프라인에서 자동 적용됨
 
 ---
 
@@ -253,41 +243,19 @@ const topK = config.generation.topK;
 
 ```bash
 NODE_ENV=development npx ts-node src/cli.ts generate ...
-```
-
-```bash
 NODE_ENV=production npx ts-node src/cli.ts generateMany ...
 ```
 
 ---
 
-### 🎯 왜 중요한가?
-
-이 구조 덕분에:
-
-* 코드 수정 없이 운영 정책 변경 가능
-* 비용 / 품질 트레이드오프 조절 가능
-* 실험 (A/B 테스트) 가능
-* 운영 환경에 맞게 자동 최적화
-
----
-
 ### ❗ 설계 원칙
 
-* config는 **전역 단일 source of truth**
-* runtime 로직에서 **직접 숫자 사용 금지**
-* 모든 threshold / count / topK는 config 통해서만 접근
-
----
-
-> Content OS는 "코드"가 아니라
-> **"설정으로 제어되는 엔진"이다**
+* config는 단일 source of truth
+* runtime에서 숫자 하드코딩 금지
 
 ---
 
 ## 🧪 Testing
-
-LLM 없이 테스트 가능:
 
 ```bash
 npx vitest
@@ -297,26 +265,14 @@ npx vitest
 
 ## 🔌 LLM Integration
 
-LLM은 직접 호출하지 않는다.
-
 ```ts
 ContentGenerator
 ContentEvaluator
 ```
 
-예시:
-
-```ts
-const generator = new GeminiContentGenerator();
-```
-
 ---
 
 ## 🧱 Architecture (요약)
-
-Content OS는 **순수 실행 엔진**이다.
-
-### Core Flow
 
 ```text
 runGenerate -> generate -> runLLMTask -> hardFilter -> validate -> envelope
@@ -326,107 +282,71 @@ runTransform -> transform -> runLLMTask -> hardFilter -> validate
 
 ---
 
-## ❗ 중요한 책임 분리 (VERY IMPORTANT)
+## ❗ Responsibility Split
 
-### ✅ Content OS (TS)
+### ✅ TS Core
 
-역할:
-
-* 콘텐츠 생성
-* 검증
-* 필터링
-* 품질 평가
-* 최종 결과 선택
+* generation
+* validation
+* filtering
+* quality scoring
+* selection
 
 ---
 
-### 🚫 Content OS가 하지 않는 것
+### 🚫 Not in TS
 
-* 성과 수집 (조회수, CTR 등)
-* DB 저장
-* 스케줄링
-* 발행 (publish)
-* 성과 기반 최적화
+* performance tracking
+* DB
+* scheduling
+* publishing
+* optimization
 
 ---
 
-## 🔁 Feedback Loop (외부 시스템)
+## 🔗 Integration (Laravel)
 
-> ❗ **이건 TS가 아니라 Laravel / Worker에서 수행된다**
+👉 반드시 읽어야 하는 문서:
 
-### 전체 흐름
+```
+docs/INTEGRATION.md
+```
+
+Laravel은 다음을 담당한다:
+
+* 콘텐츠 발행
+* 성과 수집 (views, CTR 등)
+* ranking override
+* feedback loop
+* context 생성
+
+---
+
+## 🔁 Feedback Loop (External)
 
 ```text
-[Content OS]
 Generate → Output(JSON)
                ↓
-        (외부 시스템)
-        Publish → Performance 수집
+        Publish (Laravel)
                ↓
-        Feedback 저장 (DB / JSON)
+        Performance 수집
+               ↓
+        Feedback 저장
                ↓
         Context 생성
                ↓
-[Content OS 재호출]
 Generate(context 포함)
 ```
 
 ---
 
-### 핵심 원칙
-
-* Content OS는 “학습하지 않는다”
-* 대신 **입력(context)** 이 개선된다
-
----
-
-### 적용 방식 (예시)
-
-```ts
-context = {
-  topic: "강아지 행동",
-  preferred_patterns: ["리스트형", "짧은 문장"],
-  avoid_patterns: ["긴 문단"]
-}
-```
-
----
-
-## ❗ Important Design Principle
+## ❗ Design Principle
 
 > LLM은 결과를 만드는 존재가 아니다  
-> → **후보를 만드는 존재다**
-
-Content OS는:
-
-* 여러 개 생성하고
-* 검증하고
-* 가장 좋은 것만 선택한다
-
----
-
-## 🚫 Not Included
-
-* Laravel (Scheduler / Queue / Worker)
-* DB
-* API 인증
-* 성과 분석 시스템
-* Deduplication
-
----
-
-## 🧭 Roadmap
-
-외부 시스템에서 진행:
-
-* Feedback loop 자동화
-* Topic 최적화
-* 성과 기반 ranking 개선
+> → 후보를 만드는 존재다
 
 ---
 
 ## 📌 Final Statement
-
-> Content OS의 목적은 단 하나다
 
 **“콘텐츠가 멈추지 않게 만드는 것”**

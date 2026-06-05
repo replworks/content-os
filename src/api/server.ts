@@ -1,6 +1,7 @@
 import Fastify, { type FastifyReply } from 'fastify';
 import { ENV } from '../config/env.ts';
 import { runGenerate } from '../core/runGenerate.ts';
+import { runGenerateMany } from '../core/runGenerateMany.ts';
 import { runTransform } from '../core/runTransform.ts';
 import { AppError, ERROR_CODES } from '../core/errors.ts';
 import type {
@@ -23,6 +24,13 @@ type ApiErrorResponse = {
   };
 };
 
+type CandidateListResponse = {
+  traceId: string;
+  type: ContentType;
+  candidates: Array<{ data: unknown; meta: Meta }>;
+  defaultWinnerIndex: number;
+};
+
 type EnvelopeResponse = {
   traceId: string;
   type: ContentType;
@@ -30,10 +38,15 @@ type EnvelopeResponse = {
   meta: Meta;
 };
 
+type GenerateResponse = EnvelopeResponse | CandidateListResponse;
+
 type GenerateRequest = {
   type: ContentType;
   templateId: string;
   context: Record<string, unknown>;
+  mode?: 'single' | 'candidates';
+  count?: number;
+  topK?: number;
 };
 
 type TransformRequest = {
@@ -114,12 +127,12 @@ export function buildServer({ generator, evaluator }: ServerDeps) {
 
   fastify.post<{
     Body: GenerateRequest;
-    Reply: EnvelopeResponse | ApiErrorResponse;
+    Reply: GenerateResponse | ApiErrorResponse;
   }>('/generate', async (request, reply) => {
     const { traceId } = request;
 
     try {
-      const { type, templateId, context } = request.body;
+      const { type, templateId, context, mode, count, topK } = request.body;
 
       if (!type || !templateId || !context) {
         return sendError(
@@ -130,12 +143,34 @@ export function buildServer({ generator, evaluator }: ServerDeps) {
         );
       }
 
+      if (mode === 'candidates') {
+        const result = await runGenerateMany({
+          type,
+          templateId,
+          context,
+          generator,
+          evaluator,
+          traceId,
+          count,
+          topK,
+          mode: 'candidates',
+        });
+
+        request.log.info({ traceId, type, mode }, 'request:end');
+
+        return {
+          traceId,
+          ...result,
+        };
+      }
+
       const result = await runGenerate({
         type,
         templateId,
         context,
         generator,
         evaluator,
+        traceId,
       });
 
       request.log.info({ traceId, type }, 'request:end');
