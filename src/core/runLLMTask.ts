@@ -23,9 +23,23 @@ export async function runLLMTask({
     input,
   });
 
-  const text = await generator.generate(prompt);
+  const maxAttempts = 3;
 
-  const data = parseJSON(text);
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const text = await generator.generate(prompt);
 
-  return data;
+    try {
+      return parseJSON(text);
+    } catch {
+      if (attempt === maxAttempts) {
+        throw new Error('JSON_PARSE_ERROR');
+      }
+
+      console.warn(
+        `[runLLMTask] JSON parse failed, retrying... (${attempt}/${maxAttempts})`
+      );
+    }
+  }
+
+  throw new Error('JSON_PARSE_ERROR');
 }
