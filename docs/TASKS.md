@@ -18,9 +18,25 @@
 * Blog 콘텐츠 생성
 * Blog → SNS 변환
 * Validator (schema + quality)
+* TopicGenerator 인터페이스
 * JSON 파일 출력
 * 테스트 포함
 * **LLM 인터페이스 기반 (DI 구조)**
+
+---
+
+## Current Status
+
+현재 핵심 기능은 구현되어 있습니다:
+
+* Schema / template 로딩
+* Generator / Validator / Transformer
+* runGenerate / runTransform
+* TopicGenerator 인터페이스 정의
+* CLI 실행 + outputs 저장
+* Mock 기반 테스트
+
+안정화 단계(Day 9)는 여전히 작업이 필요합니다.
 
 ---
 
@@ -34,9 +50,9 @@
 
 ### 작업
 
-* [ ] Node 프로젝트 생성
-* [ ] TypeScript 설정
-* [ ] 필수 패키지 설치 (ajv, vitest)
+* [x] Node 프로젝트 생성
+* [x] TypeScript 설정
+* [x] 필수 패키지 설치 (ajv, vitest)
 
 ---
 
@@ -77,9 +93,9 @@ content-os/
 
 ### 작업
 
-* [ ] loadSchema(type)
-* [ ] loadTemplate(type, templateId)
-* [ ] 파일 없을 경우 throw
+* [x] loadSchema(type)
+* [x] loadTemplate(type, templateId)
+* [x] 파일 없을 경우 throw
 
 ---
 
@@ -100,10 +116,12 @@ LLM 추상화 기반 콘텐츠 생성
 
 ### 작업
 
-* [ ] ContentGenerator 인터페이스 정의
-* [ ] generate() 구현 (generator 주입)
-* [ ] prompt builder 구현
-* [ ] JSON only output 강제
+* [x] ContentGenerator 인터페이스 정의
+* [x] TopicGenerator 인터페이스 정의
+* [x] generate() 구현 (generator 주입)
+* [x] prompt builder 구현
+* [x] JSON only output 강제
+* [x] envelope/data/meta 구조 유지
 
 ---
 
@@ -137,9 +155,9 @@ await generate({
 
 ### 작업
 
-* [ ] AJV schema validator
-* [ ] ContentEvaluator 인터페이스 정의
-* [ ] quality evaluator (evaluator 주입)
+* [x] AJV schema validator
+* [x] ContentEvaluator 인터페이스 정의
+* [x] quality evaluator (evaluator 주입)
 
 ---
 
@@ -174,7 +192,7 @@ Generator + Validator 연결
 
 ### 작업
 
-* [ ] runGenerate() 구현
+* [x] runGenerate() 구현
 
 ---
 
@@ -203,9 +221,9 @@ generate → validate → envelope
 
 ### 작업
 
-* [ ] transform() 구현 (generator 주입)
-* [ ] transform prompt 작성
-* [ ] validator 재사용
+* [x] transform() 구현 (generator 주입)
+* [x] transform prompt 작성
+* [x] validator 재사용
 
 ---
 
@@ -234,9 +252,9 @@ blog → transform → validate → sns
 
 ### 작업
 
-* [ ] CLI 작성
-* [ ] generator / evaluator 구현체 연결
-* [ ] outputs 저장
+* [x] CLI 작성
+* [x] generator / evaluator 구현체 연결
+* [x] outputs 저장
 
 ---
 
@@ -256,11 +274,11 @@ LLM 없이 테스트 가능
 
 ### 작업
 
-* [ ] Mock ContentGenerator
-* [ ] Mock ContentEvaluator
-* [ ] generator 테스트
-* [ ] validator 테스트
-* [ ] pipeline 테스트
+* [x] Mock ContentGenerator
+* [x] Mock ContentEvaluator
+* [x] generator 테스트
+* [x] validator 테스트
+* [x] pipeline 테스트
 
 ---
 
@@ -318,7 +336,7 @@ npx vitest
 ## Not Included
 
 * 스케줄링 (Laravel 담당)
-* API 서버
+* API 서버 (core MVP에는 포함되지 않음; `src/api/server.ts`는 별도 스터브)
 * DB
 * deduplication
 

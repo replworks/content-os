@@ -6,6 +6,27 @@ const fastify = Fastify({
   logger: true,
 });
 
+const AUTH_ENABLED = process.env.AUTH_ENABLED === 'true';
+
+fastify.addHook('preHandler', async (request, reply) => {
+  if (!AUTH_ENABLED) return;
+
+  if (request.url === '/health') return;
+
+  const apiKey = request.headers['x-api-key'];
+
+  const VALID_KEYS = new Set([
+    process.env.API_KEY,
+    // 나중에 여러개 가능
+  ]);
+
+  if (!VALID_KEYS.has(apiKey as string)) {
+    return reply.status(401).send({
+      error: 'UNAUTHORIZED',
+    });
+  }
+});
+
 // ✅ generator DI
 const generator = new GeminiContentGenerator();
 
@@ -21,6 +42,10 @@ type GenerateResponse = {
   data: any;
   meta: any;
 };
+
+fastify.get('/health', async () => {
+  return { status: 'ok' };
+});
 
 // ✅ /generate
 fastify.post<{
