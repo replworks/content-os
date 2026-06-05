@@ -138,6 +138,7 @@ LLM 없이 전체 테스트 가능
 * [x] `/transform` 성공 응답 테스트
 * [x] API validation 에러 응답 테스트
 * [x] AppError HTTP mapping 테스트
+* [x] DI 기반 mock 서버 테스트 통과
 
 ---
 

@@ -1,4 +1,4 @@
-import Fastify from 'fastify';
+import Fastify, { type FastifyReply } from 'fastify';
 import { runGenerate } from '../core/runGenerate.ts';
 import { runTransform } from '../core/runTransform.ts';
 import {
@@ -6,8 +6,11 @@ import {
   GeminiContentGenerator,
 } from '../core/geminiAdapter.ts';
 import { AppError, ERROR_CODES } from '../core/errors.ts';
+import type {
+  ContentEvaluator,
+  ContentGenerator,
+} from '../interfaces/llm.interface.ts';
 import type { ContentType, Meta } from '../core/types.ts';
-import type { FastifyReply } from 'fastify';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -15,18 +18,19 @@ declare module 'fastify' {
   }
 }
 
-const fastify = Fastify({
-  logger: true,
-});
-
-const AUTH_ENABLED = process.env.AUTH_ENABLED === 'true';
-
 type ApiErrorResponse = {
   traceId: string;
   error: {
     code: string;
     message: string;
   };
+};
+
+type EnvelopeResponse = {
+  traceId: string;
+  type: ContentType;
+  data: unknown;
+  meta: Meta;
 };
 
 type GenerateRequest = {
@@ -43,16 +47,12 @@ type TransformRequest = {
   context?: Record<string, unknown>;
 };
 
-type EnvelopeResponse = {
-  traceId: string;
-  type: ContentType;
-  data: unknown;
-  meta: Meta;
+type ServerDeps = {
+  generator: ContentGenerator;
+  evaluator: ContentEvaluator;
 };
 
-const generator = new GeminiContentGenerator();
-const evaluator = new GeminiContentEvaluator();
-
+const AUTH_ENABLED = process.env.AUTH_ENABLED === 'true';
 const VALID_KEYS = new Set([process.env.API_KEY]);
 
 function createTraceId() {
@@ -89,130 +89,143 @@ function sendError(
   } satisfies ApiErrorResponse);
 }
 
-fastify.addHook('onRequest', async (request) => {
-  request.traceId = createTraceId();
-  request.log.info({ traceId: request.traceId }, 'request:start');
-});
+export function buildServer({ generator, evaluator }: ServerDeps) {
+  const fastify = Fastify({
+    logger: true,
+  });
 
-fastify.addHook('preHandler', async (request, reply) => {
-  if (!AUTH_ENABLED) return;
-  if (request.url === '/health') return;
+  fastify.addHook('onRequest', async (request) => {
+    request.traceId = createTraceId();
+    request.log.info({ traceId: request.traceId }, 'request:start');
+  });
 
-  const apiKey = request.headers['x-api-key'];
+  fastify.addHook('preHandler', async (request, reply) => {
+    if (!AUTH_ENABLED) return;
+    if (request.url === '/health') return;
 
-  if (!VALID_KEYS.has(apiKey as string)) {
-    return sendError(reply, request.traceId, 'UNAUTHORIZED', 'Unauthorized');
-  }
-});
+    const apiKey = request.headers['x-api-key'];
 
-fastify.get('/health', async (request) => {
-  request.log.info({ traceId: request.traceId }, 'request:end');
-  return { status: 'ok' };
-});
+    if (!VALID_KEYS.has(apiKey as string)) {
+      return sendError(reply, request.traceId, 'UNAUTHORIZED', 'Unauthorized');
+    }
+  });
 
-fastify.post<{
-  Body: GenerateRequest;
-  Reply: EnvelopeResponse | ApiErrorResponse;
-}>('/generate', async (request, reply) => {
-  const { traceId } = request;
+  fastify.get('/health', async (request) => {
+    request.log.info({ traceId: request.traceId }, 'request:end');
+    return { status: 'ok' };
+  });
 
-  try {
-    const { type, templateId, context } = request.body;
+  fastify.post<{
+    Body: GenerateRequest;
+    Reply: EnvelopeResponse | ApiErrorResponse;
+  }>('/generate', async (request, reply) => {
+    const { traceId } = request;
 
-    if (!type || !templateId || !context) {
+    try {
+      const { type, templateId, context } = request.body;
+
+      if (!type || !templateId || !context) {
+        return sendError(
+          reply,
+          traceId,
+          ERROR_CODES.VALIDATION_ERROR,
+          'type, templateId, context are required'
+        );
+      }
+
+      const result = await runGenerate({
+        type,
+        templateId,
+        context,
+        generator,
+        evaluator,
+      });
+
+      request.log.info({ traceId, type }, 'request:end');
+
+      return {
+        traceId,
+        type: result.type,
+        data: result.data,
+        meta: result.meta,
+      };
+    } catch (err) {
+      request.log.error({ traceId, err }, 'request:error');
+
+      if (err instanceof AppError) {
+        return sendError(reply, traceId, err.code, err.message);
+      }
+
       return sendError(
         reply,
         traceId,
-        ERROR_CODES.VALIDATION_ERROR,
-        'type, templateId, context are required'
+        'UNKNOWN_ERROR',
+        err instanceof Error ? err.message : 'Unknown error'
       );
     }
+  });
 
-    const result = await runGenerate({
-      type,
-      templateId,
-      context,
-      generator,
-      evaluator,
-    });
+  fastify.post<{
+    Body: TransformRequest;
+    Reply: EnvelopeResponse | ApiErrorResponse;
+  }>('/transform', async (request, reply) => {
+    const { traceId } = request;
 
-    request.log.info({ traceId, type }, 'request:end');
+    try {
+      const { from, to, templateId, input, context } = request.body;
 
-    return {
-      traceId,
-      type: result.type,
-      data: result.data,
-      meta: result.meta,
-    };
-  } catch (err) {
-    request.log.error({ traceId, err }, 'request:error');
+      if (!from || !to || !templateId || typeof input === 'undefined') {
+        return sendError(
+          reply,
+          traceId,
+          ERROR_CODES.VALIDATION_ERROR,
+          'from, to, templateId, input are required'
+        );
+      }
 
-    if (err instanceof AppError) {
-      return sendError(reply, traceId, err.code, err.message);
-    }
+      const result = await runTransform({
+        from,
+        to,
+        templateId,
+        input,
+        context: context ?? {},
+        generator,
+        evaluator,
+      });
 
-    return sendError(
-      reply,
-      traceId,
-      'UNKNOWN_ERROR',
-      err instanceof Error ? err.message : 'Unknown error'
-    );
-  }
-});
+      request.log.info({ traceId, from, to }, 'request:end');
 
-fastify.post<{
-  Body: TransformRequest;
-  Reply: EnvelopeResponse | ApiErrorResponse;
-}>('/transform', async (request, reply) => {
-  const { traceId } = request;
+      return {
+        traceId,
+        type: result.type,
+        data: result.data,
+        meta: result.meta,
+      };
+    } catch (err) {
+      request.log.error({ traceId, err }, 'request:error');
 
-  try {
-    const { from, to, templateId, input, context } = request.body;
+      if (err instanceof AppError) {
+        return sendError(reply, traceId, err.code, err.message);
+      }
 
-    if (!from || !to || !templateId || typeof input === 'undefined') {
       return sendError(
         reply,
         traceId,
-        ERROR_CODES.VALIDATION_ERROR,
-        'from, to, templateId, input are required'
+        'UNKNOWN_ERROR',
+        err instanceof Error ? err.message : 'Unknown error'
       );
     }
+  });
 
-    const result = await runTransform({
-      from,
-      to,
-      templateId,
-      input,
-      context: context ?? {},
-      generator,
-      evaluator,
-    });
-
-    request.log.info({ traceId, from, to }, 'request:end');
-
-    return {
-      traceId,
-      type: result.type,
-      data: result.data,
-      meta: result.meta,
-    };
-  } catch (err) {
-    request.log.error({ traceId, err }, 'request:error');
-
-    if (err instanceof AppError) {
-      return sendError(reply, traceId, err.code, err.message);
-    }
-
-    return sendError(
-      reply,
-      traceId,
-      'UNKNOWN_ERROR',
-      err instanceof Error ? err.message : 'Unknown error'
-    );
-  }
-});
+  return fastify;
+}
 
 const start = async () => {
+  const fastify = buildServer({
+    generator: new GeminiContentGenerator(),
+    evaluator: new GeminiContentEvaluator(),
+  });
+
   try {
     await fastify.listen({
       port: 3000,
@@ -230,4 +243,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   start();
 }
 
-export { fastify };
+export { start };
