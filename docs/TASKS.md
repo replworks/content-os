@@ -126,9 +126,18 @@ LLM 없이 전체 테스트 가능
 
 ### 4.4 Optional (시간 남으면)
 
-* [ ] API layer traceId 연결
-* [ ] request-level logging
+* [x] API layer traceId 연결
+* [x] request-level logging
 * [ ] config 기반 threshold (quality_score)
+
+---
+
+### 4.5 API Testing
+
+* [x] `/generate` 성공 응답 테스트
+* [x] `/transform` 성공 응답 테스트
+* [x] API validation 에러 응답 테스트
+* [x] AppError HTTP mapping 테스트
 
 ---
 
