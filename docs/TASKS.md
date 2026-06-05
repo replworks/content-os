@@ -20,7 +20,7 @@
 * Validator (schema + quality)
 * JSON 파일 출력
 * 테스트 포함
-* Gemini 공식 SDK 사용
+* **LLM 인터페이스 기반 (DI 구조)**
 
 ---
 
@@ -35,24 +35,8 @@
 ### 작업
 
 * [ ] Node 프로젝트 생성
-
-```bash
-npm init -y
-```
-
 * [ ] TypeScript 설정
-
-```bash
-npm install -D typescript ts-node @types/node
-npx tsc --init
-```
-
-* [ ] 필수 패키지 설치
-
-```bash
-npm install ajv @google/generative-ai
-npm install -D vitest
-```
+* [ ] 필수 패키지 설치 (ajv, vitest)
 
 ---
 
@@ -65,6 +49,8 @@ content-os/
 │   ├── generator/
 │   ├── transformer/
 │   ├── validators/
+│   ├── interfaces/
+│   └── utils/
 │
 ├── schemas/
 ├── templates/
@@ -76,7 +62,7 @@ content-os/
 
 ### 완료 조건
 
-* `ts-node`로 파일 실행 가능
+* ts-node 실행 가능
 * 기본 구조 생성 완료
 
 ---
@@ -91,44 +77,31 @@ content-os/
 
 ### 작업
 
-* [ ] `loadSchema(type)` 구현
-* [ ] `loadTemplate(type, templateId)` 구현
-* [ ] 파일 존재 여부 체크 (없으면 throw)
-
----
-
-### 예시
-
-```ts
-const schema = loadSchema("blog")
-const template = loadTemplate("blog", "seo-v1")
-```
+* [ ] loadSchema(type)
+* [ ] loadTemplate(type, templateId)
+* [ ] 파일 없을 경우 throw
 
 ---
 
 ### 완료 조건
 
-* schema / template 정상 로딩
-* 에러 처리 동작 확인
+* schema/template 정상 로딩
+* 에러 처리 동작
 
 ---
 
-## Day 3 — Gemini Client & Generator
+## Day 3 — Generator (DI 기반)
 
 ### 목표
 
-LLM 호출 + JSON 생성
+LLM 추상화 기반 콘텐츠 생성
 
 ---
 
 ### 작업
 
-* [ ] Gemini client 구현
-
-```ts
-import { GoogleGenerativeAI } from "@google/generative-ai"
-```
-
+* [ ] ContentGenerator 인터페이스 정의
+* [ ] generate() 구현 (generator 주입)
 * [ ] prompt builder 구현
 * [ ] JSON only output 강제
 
@@ -136,16 +109,8 @@ import { GoogleGenerativeAI } from "@google/generative-ai"
 
 ### 핵심 규칙
 
-* 설명 금지
-* JSON 외 출력 금지
-* schema 강제 포함
-
----
-
-### 작업 추가
-
-* [ ] `parseJSON()` 안전 처리
-* [ ] JSON 파싱 실패 시 throw
+* LLM 직접 호출 금지
+* generator.generate(prompt) 사용
 
 ---
 
@@ -153,13 +118,12 @@ import { GoogleGenerativeAI } from "@google/generative-ai"
 
 ```ts
 await generate({
-  type: "blog",
-  templateId: "seo-v1",
-  context
+  type,
+  templateId,
+  context,
+  generator
 })
 ```
-
-→ JSON 반환
 
 ---
 
@@ -167,14 +131,15 @@ await generate({
 
 ### 목표
 
-콘텐츠 검증 + meta 생성
+검증 + meta 생성
 
 ---
 
 ### 작업
 
-* [ ] AJV schema validator 구현
-* [ ] quality evaluator 구현 (Gemini 사용)
+* [ ] AJV schema validator
+* [ ] ContentEvaluator 인터페이스 정의
+* [ ] quality evaluator (evaluator 주입)
 
 ---
 
@@ -187,22 +152,15 @@ await generate({
 
 ---
 
-### meta 생성
-
-```ts
-{
-  quality_score: number,
-  dimensions: {...},
-  warnings: []
-}
-```
-
----
-
 ### 완료 조건
 
-* valid / invalid 구분 가능
-* meta 생성됨
+```ts
+await validate({
+  type,
+  data,
+  evaluator
+})
+```
 
 ---
 
@@ -216,38 +174,26 @@ Generator + Validator 연결
 
 ### 작업
 
-* [ ] `runGenerate()` 구현
+* [ ] runGenerate() 구현
 
 ---
 
 ### 흐름
 
 ```ts
-generate → validate → envelope 생성
-```
-
----
-
-### envelope 구조
-
-```ts
-{
-  type,
-  data,
-  meta
-}
+generate → validate → envelope
 ```
 
 ---
 
 ### 완료 조건
 
-* 최종 JSON 완성
-* 에러 처리 동작
+* envelope 구조 반환
+* meta 포함
 
 ---
 
-## Day 6 — Transformer (Blog → SNS)
+## Day 6 — Transformer (DI 기반)
 
 ### 목표
 
@@ -257,7 +203,7 @@ generate → validate → envelope 생성
 
 ### 작업
 
-* [ ] transform 함수 구현
+* [ ] transform() 구현 (generator 주입)
 * [ ] transform prompt 작성
 * [ ] validator 재사용
 
@@ -273,7 +219,7 @@ blog → transform → validate → sns
 
 ### 완료 조건
 
-* blog → sns 변환 성공
+* SNS 변환 성공
 * schema 통과
 
 ---
@@ -282,64 +228,39 @@ blog → transform → validate → sns
 
 ### 목표
 
-실제 실행 가능 상태
+실행 가능 상태
 
 ---
 
 ### 작업
 
-* [ ] CLI 파일 작성
-
-```bash
-node cli/generate-blog.ts
-```
-
-* [ ] outputs 디렉토리에 저장
-
----
-
-### 파일 규칙
-
-```bash
-outputs/
-├── blog-2026-01-01-001.json
-├── sns-2026-01-01-001.json
-```
+* [ ] CLI 작성
+* [ ] generator / evaluator 구현체 연결
+* [ ] outputs 저장
 
 ---
 
 ### 완료 조건
 
-* CLI 실행 → 파일 생성
+* CLI 실행 → JSON 생성
 
 ---
 
-## Day 8 — Testing
+## Day 8 — Testing (Mock 기반)
 
 ### 목표
 
-CI 가능한 테스트 구축
+LLM 없이 테스트 가능
 
 ---
 
-### Generator Test
+### 작업
 
-* [ ] JSON 반환 확인
-* [ ] schema 통과 여부
-
----
-
-### Validator Test
-
-* [ ] invalid data → 실패
-* [ ] meta 생성 확인
-
----
-
-### Pipeline Test
-
-* [ ] 전체 flow 테스트
-* [ ] blog → sns 변환 테스트
+* [ ] Mock ContentGenerator
+* [ ] Mock ContentEvaluator
+* [ ] generator 테스트
+* [ ] validator 테스트
+* [ ] pipeline 테스트
 
 ---
 
@@ -349,7 +270,7 @@ CI 가능한 테스트 구축
 npx vitest
 ```
 
-→ 통과
+→ 모든 테스트 통과
 
 ---
 
@@ -357,15 +278,15 @@ npx vitest
 
 ### 목표
 
-실사용 가능한 안정성 확보
+실사용 안정성 확보
 
 ---
 
 ### 작업
 
-* [ ] JSON 파싱 retry (max 2~3회)
-* [ ] logging 추가
+* [ ] JSON parse retry
 * [ ] 에러 코드 표준화
+* [ ] logging
 
 ---
 
@@ -379,31 +300,27 @@ npx vitest
 
 ### 완료 조건
 
-* 실패 시 안정적 재시도
-* 로그 확인 가능
+* 실패 시 재시도 가능
+* 디버깅 가능
 
 ---
 
 ## Definition of Done
 
-다음이 모두 가능해야 한다:
-
-* [ ] CLI로 blog 생성
-* [ ] JSON schema 통과
-* [ ] quality_score 포함
-* [ ] SNS 변환 가능
-* [ ] outputs 저장
-* [ ] 테스트 통과
+* CLI 실행 가능
+* JSON schema 통과
+* meta 포함
+* SNS 변환 가능
+* 테스트 통과
 
 ---
 
-## Not Included (지금 안 함)
+## Not Included
 
+* 스케줄링 (Laravel 담당)
 * API 서버
-* 스케줄링
-* deduplication
 * DB
-* multi-project
+* deduplication
 
 ---
 
@@ -411,4 +328,4 @@ npx vitest
 
 이 문서의 목적은 단 하나다.
 
-> **고민 없이 구현할 수 있는 상태를 만드는 것**
+> **LLM에 의존하지 않고도 테스트 가능한 시스템을 만드는 것**

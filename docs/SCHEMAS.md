@@ -6,7 +6,7 @@
 
 ## 1. Overview
 
-Content OS의 모든 콘텐츠는 다음 구조를 따른다:
+Content OS의 모든 콘텐츠는 **공통 Envelope 구조**를 따른다:
 
 ```json
 {
@@ -18,6 +18,8 @@ Content OS의 모든 콘텐츠는 다음 구조를 따른다:
 
 이 문서는 **`data` 필드의 구조 (schema)** 를 정의한다.
 
+> schema는 Generator가 생성해야 할 JSON 구조를 강제한다
+
 ---
 
 ## 2. Design Principles
@@ -25,21 +27,29 @@ Content OS의 모든 콘텐츠는 다음 구조를 따른다:
 ### 2.1 Strict Structure
 
 * 모든 필드는 명확히 정의되어야 한다
-* optional 필드는 최소화한다
+* required 중심 설계
+* optional 최소화
 
 ---
 
 ### 2.2 Markdown First
 
-* 모든 긴 콘텐츠는 `*_markdown` 필드 사용
+* 긴 콘텐츠는 반드시 `*_markdown`
 * plain text 금지
 
 ---
 
-### 2.3 No Free-form
+### 2.3 JSON Only
 
-* 구조 없는 텍스트 금지
-* 가능한 모든 것은 필드로 분리
+* 모든 출력은 JSON
+* 자유 텍스트 금지
+
+---
+
+### 2.4 Schema = Contract
+
+* Generator는 schema를 반드시 따라야 한다
+* Validator는 schema 위반 시 즉시 실패한다
 
 ---
 
@@ -86,74 +96,14 @@ Content OS의 모든 콘텐츠는 다음 구조를 따른다:
 
 ---
 
-## 4. FAQ Schema
-
-파일: `schemas/faq.schema.json`
-
-```json
-{
-  "type": "object",
-  "required": ["question", "answer_markdown"],
-  "properties": {
-    "question": {
-      "type": "string",
-      "minLength": 10
-    },
-    "answer_markdown": {
-      "type": "string",
-      "minLength": 50
-    },
-    "tags": {
-      "type": "array",
-      "items": { "type": "string" }
-    }
-  }
-}
-```
-
----
-
-## 5. Docs Schema
-
-파일: `schemas/docs.schema.json`
-
-```json
-{
-  "type": "object",
-  "required": ["title", "sections"],
-  "properties": {
-    "title": {
-      "type": "string"
-    },
-    "sections": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["heading", "content_markdown"],
-        "properties": {
-          "heading": { "type": "string" },
-          "content_markdown": { "type": "string" }
-        }
-      }
-    },
-    "difficulty": {
-      "type": "string",
-      "enum": ["beginner", "intermediate", "advanced"]
-    }
-  }
-}
-```
-
----
-
-## 6. SNS Schema
+## 4. SNS Schema
 
 파일: `schemas/sns.schema.json`
 
 ```json
 {
   "type": "object",
-  "required": ["content", "platform"],
+  "required": ["platform", "content"],
   "properties": {
     "platform": {
       "type": "string",
@@ -173,24 +123,39 @@ Content OS의 모든 콘텐츠는 다음 구조를 따른다:
 
 ---
 
-## 7. Announcement Schema
-
-파일: `schemas/announcement.schema.json`
+## 5. FAQ Schema
 
 ```json
 {
   "type": "object",
-  "required": ["title", "body_markdown"],
+  "required": ["question", "answer_markdown"],
   "properties": {
-    "title": {
-      "type": "string"
-    },
-    "body_markdown": {
-      "type": "string"
-    },
-    "priority": {
-      "type": "string",
-      "enum": ["low", "medium", "high"]
+    "question": { "type": "string" },
+    "answer_markdown": { "type": "string" }
+  }
+}
+```
+
+---
+
+## 6. Docs Schema
+
+```json
+{
+  "type": "object",
+  "required": ["title", "sections"],
+  "properties": {
+    "title": { "type": "string" },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["heading", "content_markdown"],
+        "properties": {
+          "heading": { "type": "string" },
+          "content_markdown": { "type": "string" }
+        }
+      }
     }
   }
 }
@@ -198,18 +163,16 @@ Content OS의 모든 콘텐츠는 다음 구조를 따른다:
 
 ---
 
-## 8. Schema Evolution Rules
+## 7. Schema Evolution Rules
 
-### 8.1 Backward Compatibility
+### 7.1 Backward Compatibility
 
 * 기존 필드는 삭제하지 않는다
 * 새로운 필드는 optional로 추가
 
 ---
 
-### 8.2 Versioning
-
-필요 시:
+### 7.2 Versioning (필요 시)
 
 ```json
 {
@@ -219,30 +182,32 @@ Content OS의 모든 콘텐츠는 다음 구조를 따른다:
 
 ---
 
-## 9. Validation Rules
+## 8. Validation Responsibility
 
-Validator는 다음을 반드시 검사한다:
+Schema는 다음을 강제한다:
 
-* required 필드 존재 여부
-* 타입 일치
-* 길이 제한
+* 필드 존재 여부
+* 타입
+* 길이
 * enum 값
+
+→ 실제 검증은 Validator가 수행한다
 
 ---
 
-## 10. Anti-Patterns
+## 9. Anti-Patterns
 
 금지:
 
-* 하나의 string에 모든 정보 넣기
-* markdown 없이 긴 텍스트 작성
 * schema 없는 콘텐츠 생성
-* optional 필드 남용
+* markdown 없는 긴 텍스트
+* 하나의 string에 모든 정보 넣기
+* JSON 외 출력
 
 ---
 
-## 11. Final Statement
+## 10. Final Statement
 
-Schema는 단순한 데이터 정의가 아니다.
+Schema는 단순 구조 정의가 아니다.
 
-> **콘텐츠의 품질을 강제하는 시스템이다**
+> **LLM의 출력을 제어하는 가장 강력한 수단이다**
