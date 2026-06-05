@@ -1,6 +1,10 @@
 type LogMeta = Record<string, any> | undefined;
 
-function log(level: 'info' | 'warn' | 'error', message: string, meta?: LogMeta) {
+function log(
+  level: 'info' | 'warn' | 'error',
+  message: string,
+  meta?: LogMeta
+) {
   const payload = JSON.stringify({
     level,
     message,
