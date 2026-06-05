@@ -17,7 +17,7 @@ function log(
   }
 
   if (level === 'warn') {
-    console.warn(payload);
+    console.error(payload);
     return;
   }
 

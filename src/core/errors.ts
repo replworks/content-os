@@ -6,6 +6,7 @@ export const ERROR_CODES = {
   TEMPLATE_NOT_FOUND: 'TEMPLATE_NOT_FOUND',
   HARD_FILTER_FAILED: 'HARD_FILTER_FAILED',
   LOW_QUALITY: 'LOW_QUALITY',
+  UNKNOWN_ERROR: 'UNKNOWN_ERROR',
 } as const;
 
 export class AppError extends Error {

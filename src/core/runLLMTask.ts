@@ -51,23 +51,46 @@ export async function runLLMTask<
 
     try {
       text = await generator.generate(prompt);
-    } catch {
-      logError('runLLMTask:failed', { traceId });
-      throw new AppError(ERROR_CODES.LLM_ERROR);
+    } catch (err) {
+      logError('runLLMTask:failed', {
+        traceId,
+        code: ERROR_CODES.LLM_ERROR,
+        message: err instanceof Error ? err.message : String(err),
+      });
+      throw new AppError(
+        ERROR_CODES.LLM_ERROR,
+        err instanceof Error ? err.message : String(err)
+      );
     }
 
     try {
       return parseJSON<TOutput>(text);
-    } catch {
+    } catch (err) {
       if (attempt === maxAttempts) {
-        logError('runLLMTask:failed', { traceId });
-        throw new AppError(ERROR_CODES.JSON_PARSE_ERROR);
+        logError('runLLMTask:failed', {
+          traceId,
+          code: ERROR_CODES.JSON_PARSE_ERROR,
+          message: err instanceof Error ? err.message : String(err),
+        });
+        throw new AppError(
+          ERROR_CODES.JSON_PARSE_ERROR,
+          err instanceof Error ? err.message : String(err)
+        );
       }
 
-      logWarn('runLLMTask:retry', { traceId, attempt });
+      logWarn('runLLMTask:retry', {
+        traceId,
+        code: ERROR_CODES.JSON_PARSE_ERROR,
+        message: err instanceof Error ? err.message : String(err),
+        attempt,
+      });
     }
   }
 
-  logError('runLLMTask:failed', { traceId });
-  throw new AppError(ERROR_CODES.JSON_PARSE_ERROR);
+  logError('runLLMTask:failed', {
+    traceId,
+    code: ERROR_CODES.JSON_PARSE_ERROR,
+    message: 'JSON_PARSE_ERROR',
+  });
+  throw new AppError(ERROR_CODES.JSON_PARSE_ERROR, 'JSON_PARSE_ERROR');
 }
