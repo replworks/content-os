@@ -1,9 +1,13 @@
 export function buildTransformPrompt({
+  schema,
   template,
   input,
+  context,
 }: {
+  schema: any;
   template: any;
   input: any;
+  context: any;
 }) {
   return `
 You are a content transformer.
@@ -13,12 +17,18 @@ STRICT RULES:
 - No explanation
 - Follow schema
 
+SCHEMA:
+${JSON.stringify(schema, null, 2)}
+
 INPUT CONTENT:
 ${JSON.stringify(input, null, 2)}
+
+CONTEXT:
+${JSON.stringify(context, null, 2)}
 
 TEMPLATE:
 ${JSON.stringify(template, null, 2)}
 
-Transform the content.
+Convert the content.
 `;
 }

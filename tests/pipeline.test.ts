@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { runGenerate } from '../src/core/runGenerate';
-import { MockContentGenerator } from '../tests/mocks/mockContentGenerator';
-import { MockContentEvaluator } from '../tests/mocks/mockContentEvaluator';
+import { runGenerate } from '../src/core/runGenerate.ts';
+import { MockContentGenerator } from '../tests/mocks/mockContentGenerator.ts';
+import { MockContentEvaluator } from '../tests/mocks/mockContentEvaluator.ts';
 
 describe('Pipeline', () => {
   it('should generate validated blog content', async () => {

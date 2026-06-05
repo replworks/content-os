@@ -1,16 +1,16 @@
-import { generate } from '../generator/generate.ts';
+import { transform } from '../transformer/transform.ts';
 import { validate } from '../validators/validate.ts';
-import {
+import type {
   ContentGenerator,
   ContentEvaluator,
 } from '../interfaces/llm.interface.ts';
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
 export async function runTransform({
   from,
   to,
   templateId,
   input,
+  context,
   generator,
   evaluator,
 }: {
@@ -18,17 +18,28 @@ export async function runTransform({
   to: string;
   templateId: string;
   input: any;
+  context: any;
   generator: ContentGenerator;
   evaluator: ContentEvaluator;
 }) {
-  const data = await generate({
-    type: to,
+  const data = await transform({
+    from,
+    to,
     templateId,
-    context: input,
-    generator: generator,
+    input,
+    context,
+    generator,
   });
 
-  const result = await validate({ type: to, data, evaluator });
+  const result = await validate({
+    type: to,
+    data,
+    evaluator,
+  });
+
+  if (!result.valid) {
+    throw new Error('VALIDATION_ERROR');
+  }
 
   return {
     type: to,

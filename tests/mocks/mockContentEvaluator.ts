@@ -1,4 +1,4 @@
-import { ContentEvaluator } from '../../src/interfaces/llm.interface';
+import type { ContentEvaluator } from '../../src/interfaces/llm.interface.ts';
 
 export class MockContentEvaluator implements ContentEvaluator {
   /* eslint-disable @typescript-eslint/no-unused-vars */

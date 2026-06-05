@@ -1,4 +1,4 @@
-import { ContentEvaluator } from '../interfaces/llm.interface.ts';
+import type { ContentEvaluator } from '../interfaces/llm.interface.ts';
 
 export async function evaluateQuality({
   data,

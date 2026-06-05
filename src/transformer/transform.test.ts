@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { runGenerate } from '../core/runGenerate';
-import { runTransform } from '../core/runTransform';
-import { MockContentGenerator } from '../../tests/mocks/mockContentGenerator';
-import { MockContentEvaluator } from '../../tests/mocks/mockContentEvaluator';
+import { runGenerate } from '../core/runGenerate.ts';
+import { runTransform } from '../core/runTransform.ts';
+import { MockContentGenerator } from '../../tests/mocks/mockContentGenerator.ts';
+import { MockContentEvaluator } from '../../tests/mocks/mockContentEvaluator.ts';
 
 describe('Transform', () => {
   it('should convert blog to sns', async () => {
@@ -25,12 +25,26 @@ describe('Transform', () => {
       to: 'sns',
       templateId: 'sns-transform',
       input: blog.data,
+      context: {
+        tone: 'friendly',
+        goal: 'engagement',
+      },
       generator,
-      evaluator, // ✅ FIX
+      evaluator,
     });
 
-    expect(sns.data).toBeDefined();
-    expect(sns.data.content).toBeDefined();
-    expect(sns.meta.quality_score).toBeTypeOf('number');
+    // 🔥 구조 검증
+    expect(sns.type).toBe('sns');
+
+    // 🔥 데이터 검증
+    expect(typeof sns.data.content).toBe('string');
+    expect(sns.data.content.length).toBeGreaterThan(0);
+
+    // 🔥 schema 관련
+    expect(Array.isArray(sns.data.hashtags)).toBe(true);
+
+    // 🔥 meta 검증
+    expect(typeof sns.meta.quality_score).toBe('number');
+    expect(sns.meta.quality_score).toBeGreaterThan(0);
   });
 });
