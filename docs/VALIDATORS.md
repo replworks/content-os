@@ -99,14 +99,14 @@ function validateSchema(schema, data) {
 
 ```json
 {
-  "quality_score": 0.0,
+  "quality_score": 85,
   "dimensions": {
-    "readability": 0.0,
-    "relevance": 0.0,
-    "tone_match": 0.0,
-    "originality": 0.0
+    "readability": 90,
+    "relevance": 80,
+    "tone_match": 85,
+    "originality": 75
   },
-  "warnings": []
+  "warnings": ["Some minor grammar issues."]
 }
 ```
 
@@ -119,28 +119,28 @@ async function evaluateQuality(data, evaluator) {
   const prompt = `
 Evaluate the quality of this content.
 
-Return JSON only:
+Return ONLY JSON:
 {
-  "readability": number,
-  "relevance": number,
-  "tone_match": number,
-  "originality": number,
-  "warnings": []
+  "quality_score": number (0-100),
+  "dimensions": {
+    "readability": number,
+    "relevance": number,
+    "tone_match": number,
+    "originality": number
+  },
+  "warnings": string[]
 }
+
+CONTENT:
+${JSON.stringify(data)}
 `
 
   const result = await evaluator.evaluate(prompt)
   const parsed = parseJSON(result)
 
-  const score =
-    (parsed.readability +
-      parsed.relevance +
-      parsed.tone_match +
-      parsed.originality) / 4
-
   return {
-    quality_score: score,
-    dimensions: parsed,
+    quality_score: parsed.quality_score,
+    dimensions: parsed.dimensions,
     warnings: parsed.warnings || []
   }
 }
