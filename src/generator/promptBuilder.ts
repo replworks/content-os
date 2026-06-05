@@ -3,9 +3,9 @@ export function buildPrompt({
   template,
   context,
 }: {
-  schema: any;
-  template: any;
-  context: any;
+  schema: unknown;
+  template: unknown;
+  context: Record<string, unknown> | unknown;
 }) {
   return `
 You are a content generator.

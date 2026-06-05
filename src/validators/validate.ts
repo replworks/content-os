@@ -3,18 +3,19 @@ import { validateSchema } from './schemaValidator.ts';
 import { evaluateQuality } from './qualityEvaluator.ts';
 import type { ContentEvaluator } from '../interfaces/llm.interface.ts';
 import { logInfo } from '../core/logger.ts';
+import type { ContentType, Meta } from '../core/types.ts';
 
-export async function validate({
+export async function validate<T>({
   type,
   data,
   evaluator,
   traceId,
 }: {
-  type: string;
-  data: any;
+  type: ContentType;
+  data: T;
   evaluator: ContentEvaluator;
   traceId?: string;
-}) {
+}): Promise<{ valid: boolean; errors?: { message?: string }[]; meta?: Meta }> {
   const schema = loadSchema(type);
 
   // 1. Schema validation (Hard fail)
@@ -23,7 +24,7 @@ export async function validate({
   if (!schemaResult.valid) {
     return {
       valid: false,
-      errors: schemaResult.errors,
+      errors: (schemaResult.errors ?? []) as { message?: string }[],
     };
   }
 

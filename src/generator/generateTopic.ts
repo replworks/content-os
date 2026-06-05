@@ -5,7 +5,7 @@ export async function generateTopic({
   context,
   generator,
 }: {
-  context: any;
+  context: Record<string, unknown>;
   generator: TopicGenerator;
 }) {
   if (!generator || typeof generator.generate !== 'function') {
@@ -31,7 +31,7 @@ ${JSON.stringify(context, null, 2)}
 
   const text = await generator.generate(prompt);
 
-  const data = parseJSON(text);
+  const data = parseJSON<Record<string, unknown>>(text);
 
   return data;
 }

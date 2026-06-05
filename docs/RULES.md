@@ -1,61 +1,95 @@
-# Content OS — Rules
+# Content OS - Rules
 
----
+## 1. Output Rule
 
-## 1. Purpose
+LLM output must be JSON only.
 
-This document describes the runtime rules enforced by code.
+* no prose before or after the JSON payload
+* parsing failures trigger `JSON_PARSE_ERROR` after retry exhaustion
 
----
+## 2. Retry Rule
 
-## 2. Generator contracts
+Retry is handled only by `runLLMTask()`.
 
-* `ContentGenerator.generate(prompt)` must return valid JSON text.
-* Prompt output must contain JSON only.
-* No additional explanation or text outside the JSON payload.
+* maximum attempts: 3
+* retry happens only when JSON parsing fails
+* generator execution errors are not retried
 
----
+## 3. Hard Filter Rule
 
-## 3. Schema and template loading
+`hardFilter(data)` runs after JSON parsing and before schema validation.
 
-* `loadSchema(type)` reads `schemas/<type>.schema.json`.
-* `loadTemplate(type, templateId)` reads `templates/<type>/<templateId>.json`.
-* Missing files throw an error.
+It rejects:
 
----
+* non-object values
+* objects missing all of `title`, `content`, and `body_markdown`
+* strings shorter than 5 characters
+* strings longer than 10000 characters
+* content containing `undefined`
+* suspicious brace-heavy content
+* forbidden patterns: `lorem ipsum`, `test test`, `dummy`, `asdf`, `1234`
 
-## 4. Validation rules
+Rejected output becomes `HARD_FILTER_FAILED`.
 
-* `validate({type,data,evaluator})` validates output against schema.
-* Schema validation uses AJV strict mode with `allErrors: true`.
-* If schema validation fails, `validate()` returns `{ valid: false, errors }`.
-* If schema validation passes, quality evaluation is performed.
+## 4. Validation Rule
 
----
+Validation happens in two stages:
 
-## 5. Quality evaluator rules
+1. AJV schema validation against `schemas/<type>.schema.json`
+2. quality evaluation through `ContentEvaluator`
 
-* `evaluateQuality({data,evaluator})` requires an evaluator instance.
-* It sends a prompt containing the generated content.
-* Expected evaluator JSON keys:
-  * `quality_score` (number, 0-100)
-  * `dimensions` with `readability`, `relevance`, `tone_match`, `originality`
-  * `warnings` array
-* The parsed evaluator JSON is returned as meta.
+Behavior:
 
----
+* schema failure returns `{ valid: false, errors }`
+* `runGenerate()` / `runTransform()` turn invalid results into `VALIDATION_ERROR`
+* successful validation returns `{ valid: true, meta }`
 
-## 6. Error handling
+## 5. Quality Meta
 
-* Invalid JSON from the LLM causes `JSON_PARSE_ERROR`.
-* Missing or invalid `generator`/`evaluator` functions throw errors.
-* `runTransform()` throws `VALIDATION_ERROR` when validation fails.
+`evaluateQuality({ data, evaluator })` expects the evaluator to return JSON with:
 
----
+* `quality_score`
+* `dimensions`
+* `warnings`
 
-## 7. Implementation scope
+This payload is returned as `meta`.
 
-* `runGenerate()` outputs `{ type, data, meta }`.
-* `runTransform()` outputs `{ type, data, meta }`.
-* No score threshold or discard logic is enforced in current code.
-* Retry behavior is not implemented inside the core functions.
+## 6. Loading Rules
+
+* `loadSchema(type)` reads `schemas/<type>.schema.json`
+* `loadTemplate(type, templateId)` reads `templates/<type>/<templateId>.json`
+* missing schema files throw `SCHEMA_NOT_FOUND`
+* missing template files throw `TEMPLATE_NOT_FOUND`
+
+## 7. Logging Rule
+
+Logs are JSON objects written to console.
+
+Common fields:
+
+* `level`
+* `message`
+* `traceId`
+
+Messages include:
+
+* `runGenerate:start`
+* `runTransform:start`
+* `runLLMTask:request`
+* `runLLMTask:retry`
+* `runLLMTask:failed`
+* `validate:done`
+
+## 8. Runtime Envelope
+
+Successful operations return:
+
+```json
+{
+  "type": "blog",
+  "data": {},
+  "meta": {}
+}
+```
+
+`runTransform()` uses `to` as the returned type.

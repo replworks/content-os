@@ -3,7 +3,20 @@ import type { ContentGenerator } from '../interfaces/llm.interface.ts';
 import { AppError, ERROR_CODES } from './errors.ts';
 import { logError, logInfo, logWarn } from './logger.ts';
 
-export async function runLLMTask({
+type PromptBuilderArgs<TSchema, TTemplate, TContext, TInput> = {
+  schema: TSchema;
+  template: TTemplate;
+  context: TContext;
+  input?: TInput;
+};
+
+export async function runLLMTask<
+  TOutput = Record<string, unknown>,
+  TSchema = unknown,
+  TTemplate = unknown,
+  TContext extends Record<string, unknown> = Record<string, unknown>,
+  TInput = unknown,
+>({
   schema,
   template,
   context,
@@ -12,14 +25,16 @@ export async function runLLMTask({
   promptBuilder,
   traceId,
 }: {
-  schema: any;
-  template: any;
-  context: any;
-  input?: any;
+  schema: TSchema;
+  template: TTemplate;
+  context: TContext;
+  input?: TInput;
   generator: ContentGenerator;
-  promptBuilder: (args: any) => string;
+  promptBuilder: (
+    args: PromptBuilderArgs<TSchema, TTemplate, TContext, TInput>
+  ) => string;
   traceId?: string;
-}) {
+}): Promise<TOutput> {
   logInfo('runLLMTask:request', { traceId });
 
   const prompt = promptBuilder({
@@ -42,7 +57,7 @@ export async function runLLMTask({
     }
 
     try {
-      return parseJSON(text);
+      return parseJSON<TOutput>(text);
     } catch {
       if (attempt === maxAttempts) {
         logError('runLLMTask:failed', { traceId });

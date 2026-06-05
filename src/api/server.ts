@@ -1,109 +1,230 @@
-import Fastify from 'fastify';
-import { generate } from '../generator/generate.ts';
-import { GeminiContentGenerator } from '../core/geminiAdapter.ts';
+import Fastify, { type FastifyReply } from 'fastify';
+import { runGenerate } from '../core/runGenerate.ts';
+import { runTransform } from '../core/runTransform.ts';
+import { AppError, ERROR_CODES } from '../core/errors.ts';
+import type {
+  ContentEvaluator,
+  ContentGenerator,
+} from '../interfaces/llm.interface.ts';
+import type { ContentType, Meta } from '../core/types.ts';
 
-const fastify = Fastify({
-  logger: true,
-});
+declare module 'fastify' {
+  interface FastifyRequest {
+    traceId: string;
+  }
+}
+
+type ApiErrorResponse = {
+  traceId: string;
+  error: {
+    code: string;
+    message: string;
+  };
+};
+
+type EnvelopeResponse = {
+  traceId: string;
+  type: ContentType;
+  data: unknown;
+  meta: Meta;
+};
+
+type GenerateRequest = {
+  type: ContentType;
+  templateId: string;
+  context: Record<string, unknown>;
+};
+
+type TransformRequest = {
+  from: ContentType;
+  to: ContentType;
+  templateId: string;
+  input: unknown;
+  context?: Record<string, unknown>;
+};
+
+type ServerDeps = {
+  generator: ContentGenerator;
+  evaluator: ContentEvaluator;
+};
 
 const AUTH_ENABLED = process.env.AUTH_ENABLED === 'true';
+const VALID_KEYS = new Set([process.env.API_KEY]);
 
-fastify.addHook('preHandler', async (request, reply) => {
-  if (!AUTH_ENABLED) return;
+function createTraceId() {
+  return Math.random().toString(36).slice(2);
+}
 
-  if (request.url === '/health') return;
-
-  const apiKey = request.headers['x-api-key'];
-
-  const VALID_KEYS = new Set([
-    process.env.API_KEY,
-    // 나중에 여러개 가능
-  ]);
-
-  if (!VALID_KEYS.has(apiKey as string)) {
-    return reply.status(401).send({
-      error: 'UNAUTHORIZED',
-    });
+function getStatusCode(code: string) {
+  switch (code) {
+    case ERROR_CODES.VALIDATION_ERROR:
+      return 400;
+    case ERROR_CODES.JSON_PARSE_ERROR:
+      return 500;
+    case ERROR_CODES.LLM_ERROR:
+      return 502;
+    case ERROR_CODES.HARD_FILTER_FAILED:
+      return 422;
+    default:
+      return 500;
   }
-});
+}
 
-// ✅ generator DI
-const generator = new GeminiContentGenerator();
+function sendError(
+  reply: FastifyReply,
+  traceId: string,
+  code: string,
+  message: string
+) {
+  return reply.status(getStatusCode(code)).send({
+    traceId,
+    error: {
+      code,
+      message,
+    },
+  } satisfies ApiErrorResponse);
+}
 
-// 타입 정의
-type GenerateRequest = {
-  type: string;
-  templateId: string;
-  context: any;
-};
+export function buildServer({ generator, evaluator }: ServerDeps) {
+  const fastify = Fastify({
+    logger: true,
+  });
 
-type GenerateResponse = {
-  type: string;
-  data: any;
-  meta: any;
-};
+  fastify.addHook('onRequest', async (request) => {
+    request.traceId = createTraceId();
+    request.log.info({ traceId: request.traceId }, 'request:start');
+  });
 
-fastify.get('/health', async () => {
-  return { status: 'ok' };
-});
+  fastify.addHook('preHandler', async (request, reply) => {
+    if (!AUTH_ENABLED) return;
+    if (request.url === '/health') return;
 
-// ✅ /generate
-fastify.post<{
-  Body: GenerateRequest;
-  Reply: GenerateResponse | { error: string; message?: string };
-}>('/generate', async (request, reply) => {
-  try {
-    const { type, templateId, context } = request.body;
+    const apiKey = request.headers['x-api-key'];
 
-    // 🔒 Hard validation (API 레벨)
-    if (!type || !templateId || !context) {
-      return reply.status(400).send({
-        error: 'INVALID_INPUT',
-        message: 'type, templateId, context are required',
-      });
+    if (!VALID_KEYS.has(apiKey as string)) {
+      return sendError(reply, request.traceId, 'UNAUTHORIZED', 'Unauthorized');
     }
+  });
 
-    // 1️⃣ Generator 실행 (LLM 호출)
-    const data = await generate({
-      type,
-      templateId,
-      context,
-      generator, // 🔥 여기 중요
-    });
+  fastify.get('/health', async (request) => {
+    request.log.info({ traceId: request.traceId }, 'request:end');
+    return { status: 'ok' };
+  });
 
-    // 2️⃣ Validator 연결 자리 (아직 없으니까 placeholder)
-    const meta = {
-      quality_score: 0,
-      dimensions: {},
-      warnings: [],
-    };
+  fastify.post<{
+    Body: GenerateRequest;
+    Reply: EnvelopeResponse | ApiErrorResponse;
+  }>('/generate', async (request, reply) => {
+    const { traceId } = request;
 
-    // 3️⃣ Envelope 반환
-    return {
-      type,
-      data,
-      meta,
-    };
-  } catch (err: any) {
-    request.log.error(err);
+    try {
+      const { type, templateId, context } = request.body;
 
-    // 🔥 에러 타입 분리 추천
-    if (err.message.includes('JSON')) {
-      return reply.status(500).send({
-        error: 'JSON_PARSE_ERROR',
-        message: err.message,
+      if (!type || !templateId || !context) {
+        return sendError(
+          reply,
+          traceId,
+          ERROR_CODES.VALIDATION_ERROR,
+          'type, templateId, context are required'
+        );
+      }
+
+      const result = await runGenerate({
+        type,
+        templateId,
+        context,
+        generator,
+        evaluator,
       });
+
+      request.log.info({ traceId, type }, 'request:end');
+
+      return {
+        traceId,
+        type: result.type,
+        data: result.data,
+        meta: result.meta,
+      };
+    } catch (err) {
+      request.log.error({ traceId, err }, 'request:error');
+
+      if (err instanceof AppError) {
+        return sendError(reply, traceId, err.code, err.message);
+      }
+
+      return sendError(
+        reply,
+        traceId,
+        'UNKNOWN_ERROR',
+        err instanceof Error ? err.message : 'Unknown error'
+      );
     }
+  });
 
-    return reply.status(500).send({
-      error: 'GENERATION_FAILED',
-      message: err.message,
-    });
-  }
-});
+  fastify.post<{
+    Body: TransformRequest;
+    Reply: EnvelopeResponse | ApiErrorResponse;
+  }>('/transform', async (request, reply) => {
+    const { traceId } = request;
 
-// 서버 시작
+    try {
+      const { from, to, templateId, input, context } = request.body;
+
+      if (!from || !to || !templateId || typeof input === 'undefined') {
+        return sendError(
+          reply,
+          traceId,
+          ERROR_CODES.VALIDATION_ERROR,
+          'from, to, templateId, input are required'
+        );
+      }
+
+      const result = await runTransform({
+        from,
+        to,
+        templateId,
+        input,
+        context: context ?? {},
+        generator,
+        evaluator,
+      });
+
+      request.log.info({ traceId, from, to }, 'request:end');
+
+      return {
+        traceId,
+        type: result.type,
+        data: result.data,
+        meta: result.meta,
+      };
+    } catch (err) {
+      request.log.error({ traceId, err }, 'request:error');
+
+      if (err instanceof AppError) {
+        return sendError(reply, traceId, err.code, err.message);
+      }
+
+      return sendError(
+        reply,
+        traceId,
+        'UNKNOWN_ERROR',
+        err instanceof Error ? err.message : 'Unknown error'
+      );
+    }
+  });
+
+  return fastify;
+}
+
 const start = async () => {
+  const { GeminiContentEvaluator, GeminiContentGenerator } =
+    await import('../core/geminiAdapter.ts');
+
+  const fastify = buildServer({
+    generator: new GeminiContentGenerator(),
+    evaluator: new GeminiContentEvaluator(),
+  });
+
   try {
     await fastify.listen({
       port: 3000,
@@ -117,4 +238,8 @@ const start = async () => {
   }
 };
 
-start();
+if (import.meta.url === `file://${process.argv[1]}`) {
+  start();
+}
+
+export { start };

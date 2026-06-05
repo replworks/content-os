@@ -1,5 +1,3 @@
-# TASKS.md
-
 # Content OS — Implementation Tasks
 
 ---
@@ -21,374 +19,156 @@
 * TopicGenerator 인터페이스
 * JSON 파일 출력
 * 테스트 포함
-* **LLM 인터페이스 기반 (DI 구조)**
+* LLM 인터페이스 기반 (DI 구조)
 
 ---
 
 ## Current Status
 
-현재 핵심 기능은 구현되어 있습니다:
+현재 시스템은 MVP를 넘어 안정화 단계에 들어갔다.
 
-* Schema / template 로딩
-* Generator / Validator / Transformer
+구현 완료:
+
+* Schema / Template 로딩
+* Generator / Transformer / Validator
 * runGenerate / runTransform
-* TopicGenerator 인터페이스 정의
-* CLI 실행 + outputs 저장
-* Mock 기반 테스트
 * JSON parse retry
-* Standardized error handling
+* AppError (표준 에러 구조)
 * Structured logging + traceId
-* Hard Filter (TS-only 1차 필터)
-
-안정화 단계(Day 9)는 일부 정리 작업이 남아 있습니다.
+* Hard Filter (TS 기반 1차 필터)
+* 강타입 파이프라인 정리
+* Mock 기반 테스트 (LLM 없이 실행 가능)
 
 ---
 
-## Day 1 — Project Bootstrap
+## Phase 1 — Core System (완료)
+
+### 포함
+
+* Generator
+* Validator
+* Transformer
+* Pipeline (runGenerate / runTransform)
+
+✅ 완료
+
+---
+
+## Phase 2 — Reliability Layer (완료)
 
 ### 목표
 
-개발 환경 + 기본 구조 완성
+LLM 불안정성 대응 + 운영 안정성 확보
 
 ---
 
 ### 작업
 
-* [x] Node 프로젝트 생성
-* [x] TypeScript 설정
-* [x] 필수 패키지 설치 (ajv, vitest)
-
----
-
-### 디렉토리 구조 생성
-
-```bash
-content-os/
-├── src/
-│   ├── core/
-│   ├── generator/
-│   ├── transformer/
-│   ├── validators/
-│   ├── interfaces/
-│   └── utils/
-│
-├── schemas/
-├── templates/
-├── outputs/
-├── tests/
-```
-
----
-
-### 완료 조건
-
-* ts-node 실행 가능
-* 기본 구조 생성 완료
-
----
-
-## Day 2 — Schema & Template Loader
-
-### 목표
-
-파일 기반 설정 로딩
-
----
-
-### 작업
-
-* [x] loadSchema(type)
-* [x] loadTemplate(type, templateId)
-* [x] 파일 없을 경우 throw
-
----
-
-### 완료 조건
-
-* schema/template 정상 로딩
-* 에러 처리 동작
-
----
-
-## Day 3 — Generator (DI 기반)
-
-### 목표
-
-LLM 추상화 기반 콘텐츠 생성
-
----
-
-### 작업
-
-* [x] ContentGenerator 인터페이스 정의
-* [x] TopicGenerator 인터페이스 정의
-* [x] generate() 구현 (generator 주입)
-* [x] prompt builder 구현
-* [x] JSON only output 강제
-* [x] envelope/data/meta 구조 유지
-
----
-
-### 핵심 규칙
-
-* LLM 직접 호출 금지
-* generator.generate(prompt) 사용
-
----
-
-### 완료 조건
-
-```ts
-await generate({
-  type,
-  templateId,
-  context,
-  generator
-})
-```
-
----
-
-## Day 4 — Validator (Schema + Quality)
-
-### 목표
-
-검증 + meta 생성
-
----
-
-### 작업
-
-* [x] AJV schema validator
-* [x] ContentEvaluator 인터페이스 정의
-* [x] quality evaluator (evaluator 주입)
-
----
-
-### Quality 기준
-
-* readability
-* relevance
-* tone_match
-* originality
-
----
-
-### 완료 조건
-
-```ts
-await validate({
-  type,
-  data,
-  evaluator
-})
-```
-
----
-
-## Day 5 — Generate Pipeline
-
-### 목표
-
-Generator + Validator 연결
-
----
-
-### 작업
-
-* [x] runGenerate() 구현
 * [x] JSON parse retry
-* [x] AppError / error code standardization
-* [x] Structured logging + traceId
+* [x] AppError 표준화
+* [x] Structured logging (traceId)
+* [x] Hard Filter (TS-only validation)
+* [x] Error / Retry 테스트
 
 ---
 
-### 흐름
-
-```ts
-generate → validate → envelope
-```
-
----
-
-### 완료 조건
-
-* envelope 구조 반환
-* meta 포함
-
----
-
-## Day 6 — Transformer (DI 기반)
+## Phase 3 — Testing (완료)
 
 ### 목표
 
-콘텐츠 변환 시스템 구축
+LLM 없이 전체 테스트 가능
 
 ---
 
 ### 작업
 
-* [x] transform() 구현 (generator 주입)
-* [x] transform prompt 작성
-* [x] validator 재사용
-* [x] AppError / error code standardization
-* [x] Structured logging + traceId
+* [x] MockContentGenerator
+* [x] MockContentEvaluator
+* [x] Generator 테스트
+* [x] Transformer 테스트
+* [x] Validator 테스트
+* [x] Pipeline 테스트
 
 ---
 
-### 흐름
-
-```ts
-blog → transform → validate → sns
-```
-
----
-
-### 완료 조건
-
-* SNS 변환 성공
-* schema 통과
-
----
-
-## Day 7 — CLI + Output
+## Phase 4 — Stabilization (진짜 마지막 단계)
 
 ### 목표
 
-실행 가능 상태
+“운영 가능한 상태”로 마무리
 
 ---
 
-### 작업
+### 4.1 CLI 안정화
 
-* [x] CLI 작성
-* [x] generator / evaluator 구현체 연결
-* [x] outputs 저장
-
----
-
-## Day 8 — Reliability & Safety
-
-### 목표
-
-런타임 안정성 강화
+* [ ] CLI 에러 출력 개선
+* [ ] traceId 출력
+* [ ] 실패 시 exit code 명확화
 
 ---
 
-### 작업
+### 4.2 Docs 정합성
 
-* [x] JSON parse retry in `runLLMTask()`
-* [x] Standardized `AppError`
-* [x] Structured logger utilities
-* [x] Hard Filter 1차 필터
-* [x] Retry / validation / hard-filter tests
-
----
-
-## Day 9 — Stabilization
-
-### 목표
-
-문서/테스트/구조 정합성 마무리
+* [x] ARCHITECTURE.md ↔ 코드 일치 검증
+* [x] SCHEMAS.md ↔ 실제 schema 검증
+* [x] CONTEXT.md ↔ 실제 context 구조 확인
+* [x] RULES.md ↔ Hard Filter 반영 여부 확인
 
 ---
 
-### 작업
+### 4.3 Code Cleanup
 
-* [x] Error tests grouped by failure mode
-* [x] Logger tests
-* [x] Hard filter tests
-* [ ] CLI / docs final cleanup
-* [ ] Optional: add request-level trace propagation to API layer
+* [ ] 불필요한 console.log 제거
+* [ ] 에러 메시지 통일
+* [x] 타입 정리 (any 최소화)
 
 ---
 
-### 완료 조건
+### 4.4 Optional (시간 남으면)
 
-* CLI 실행 → JSON 생성
-
----
-
-## Day 8 — Testing (Mock 기반)
-
-### 목표
-
-LLM 없이 테스트 가능
+* [x] API layer traceId 연결
+* [x] request-level logging
+* [ ] config 기반 threshold (quality_score)
 
 ---
 
-### 작업
+### 4.5 API Testing
 
-* [x] Mock ContentGenerator
-* [x] Mock ContentEvaluator
-* [x] generator 테스트
-* [x] validator 테스트
-* [x] pipeline 테스트
-
----
-
-### 완료 조건
-
-```bash
-npx vitest
-```
-
-→ 모든 테스트 통과
-
----
-
-## Day 9 — Stabilization
-
-### 목표
-
-실사용 안정성 확보
-
----
-
-### 작업
-
-* [ ] JSON parse retry
-* [ ] 에러 코드 표준화
-* [ ] logging
-
----
-
-### 에러 타입
-
-* VALIDATION_ERROR
-* JSON_PARSE_ERROR
-* LLM_ERROR
-
----
-
-### 완료 조건
-
-* 실패 시 재시도 가능
-* 디버깅 가능
+* [x] `/generate` 성공 응답 테스트
+* [x] `/transform` 성공 응답 테스트
+* [x] API validation 에러 응답 테스트
+* [x] AppError HTTP mapping 테스트
+* [x] DI 기반 mock 서버 테스트 통과
 
 ---
 
 ## Definition of Done
 
-* CLI 실행 가능
-* JSON schema 통과
-* meta 포함
-* SNS 변환 가능
-* 테스트 통과
+다음이 모두 가능해야 한다:
+
+* [x] CLI로 blog 생성
+* [x] JSON schema 통과
+* [x] quality_score 포함
+* [x] SNS 변환 가능
+* [x] outputs 저장
+* [x] 테스트 통과
+* [x] 에러 발생 시 안정적 복구
+* [x] 로그 기반 디버깅 가능
 
 ---
 
-## Not Included
+## Not Included (명확히 제외)
 
-* 스케줄링 (Laravel 담당)
-* API 서버 (core MVP에는 포함되지 않음; `src/api/server.ts`는 별도 스터브)
+* Laravel (Scheduler / Queue)
+* API 인증 / 사용자 관리
 * DB
-* deduplication
+* Deduplication (Embedding)
+* SaaS 기능
 
 ---
 
 ## Final Statement
 
-이 문서의 목적은 단 하나다.
+이 시스템은 단순한 LLM wrapper가 아니다.
 
-> **LLM에 의존하지 않고도 테스트 가능한 시스템을 만드는 것**
+> **“LLM을 안정적인 콘텐츠 생산 시스템으로 만드는 엔진”이다**
