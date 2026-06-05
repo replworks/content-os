@@ -35,8 +35,12 @@
 * TopicGenerator 인터페이스 정의
 * CLI 실행 + outputs 저장
 * Mock 기반 테스트
+* JSON parse retry
+* Standardized error handling
+* Structured logging + traceId
+* Hard Filter (TS-only 1차 필터)
 
-안정화 단계(Day 9)는 여전히 작업이 필요합니다.
+안정화 단계(Day 9)는 일부 정리 작업이 남아 있습니다.
 
 ---
 
@@ -193,6 +197,9 @@ Generator + Validator 연결
 ### 작업
 
 * [x] runGenerate() 구현
+* [x] JSON parse retry
+* [x] AppError / error code standardization
+* [x] Structured logging + traceId
 
 ---
 
@@ -224,6 +231,8 @@ generate → validate → envelope
 * [x] transform() 구현 (generator 주입)
 * [x] transform prompt 작성
 * [x] validator 재사용
+* [x] AppError / error code standardization
+* [x] Structured logging + traceId
 
 ---
 
@@ -255,6 +264,42 @@ blog → transform → validate → sns
 * [x] CLI 작성
 * [x] generator / evaluator 구현체 연결
 * [x] outputs 저장
+
+---
+
+## Day 8 — Reliability & Safety
+
+### 목표
+
+런타임 안정성 강화
+
+---
+
+### 작업
+
+* [x] JSON parse retry in `runLLMTask()`
+* [x] Standardized `AppError`
+* [x] Structured logger utilities
+* [x] Hard Filter 1차 필터
+* [x] Retry / validation / hard-filter tests
+
+---
+
+## Day 9 — Stabilization
+
+### 목표
+
+문서/테스트/구조 정합성 마무리
+
+---
+
+### 작업
+
+* [x] Error tests grouped by failure mode
+* [x] Logger tests
+* [x] Hard filter tests
+* [ ] CLI / docs final cleanup
+* [ ] Optional: add request-level trace propagation to API layer
 
 ---
 
