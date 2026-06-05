@@ -4,6 +4,7 @@ import type { ContentGenerator } from '../interfaces/llm.interface';
 import { loadSchema } from '../core/loadSchema.ts';
 import { runLLMTask } from '../core/runLLMTask.ts';
 import type { ContentDataMap, ContentType } from '../core/types.ts';
+import { AppError, ERROR_CODES } from '../core/errors.ts';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 export async function transform<TType extends ContentType>({
@@ -36,5 +37,14 @@ export async function transform<TType extends ContentType>({
     generator,
     promptBuilder: buildTransformPrompt,
     traceId,
+  }).catch((err) => {
+    if (err instanceof AppError) {
+      throw err;
+    }
+
+    throw new AppError(
+      ERROR_CODES.UNKNOWN_ERROR,
+      err instanceof Error ? err.message : String(err)
+    );
   });
 }

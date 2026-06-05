@@ -1,5 +1,6 @@
 import { parseJSON } from '../utils/parseJSON.ts';
 import { TopicGenerator } from '../interfaces/llm.interface.ts';
+import { AppError, ERROR_CODES } from '../core/errors.ts';
 
 export async function generateTopic({
   context,
@@ -9,7 +10,10 @@ export async function generateTopic({
   generator: TopicGenerator;
 }) {
   if (!generator || typeof generator.generate !== 'function') {
-    throw new Error('TopicGenerator with a generate() function is required');
+    throw new AppError(
+      ERROR_CODES.LLM_ERROR,
+      'TopicGenerator with a generate() function is required'
+    );
   }
 
   const prompt = `

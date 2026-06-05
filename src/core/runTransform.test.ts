@@ -1,11 +1,59 @@
 import { describe, it, expect } from 'vitest';
 import { runGenerate } from './runGenerate.ts';
 import { runTransform } from './runTransform.ts';
+import { ERROR_CODES } from './errors.ts';
 
 import { MockContentGenerator } from '../../tests/mocks/mockContentGenerator.ts';
 import { MockContentEvaluator } from '../../tests/mocks/mockContentEvaluator.ts';
 
 describe('runTransform', () => {
+  it('should throw LOW_QUALITY when transform score is below threshold', async () => {
+    const generator = new MockContentGenerator();
+    const highEvaluator = new MockContentEvaluator();
+    const lowEvaluator = {
+      evaluate: async () =>
+        JSON.stringify({
+          quality_score: 40,
+          dimensions: {
+            readability: 40,
+            relevance: 40,
+            tone_match: 40,
+            originality: 40,
+          },
+          warnings: [],
+        }),
+    };
+
+    const blog = await runGenerate({
+      type: 'blog',
+      templateId: 'seo-v1',
+      context: {
+        topic: '강아지가 혀를 내미는 이유',
+        audience: '초보 반려인',
+      },
+      generator,
+      evaluator: highEvaluator,
+    });
+
+    await expect(
+      runTransform({
+        from: 'blog',
+        to: 'sns',
+        templateId: 'sns-transform',
+        input: blog.data,
+        context: {
+          tone: 'friendly',
+          goal: 'engagement',
+        },
+        generator,
+        evaluator: lowEvaluator,
+      })
+    ).rejects.toMatchObject({
+      code: ERROR_CODES.LOW_QUALITY,
+      message: 'Quality score 40 below threshold 60',
+    });
+  });
+
   it('should transform blog to sns with valid structure and meta', async () => {
     const generator = new MockContentGenerator();
     const evaluator = new MockContentEvaluator();

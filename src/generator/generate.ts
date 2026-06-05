@@ -4,6 +4,7 @@ import { buildPrompt } from './promptBuilder.ts';
 import type { ContentGenerator } from '../interfaces/llm.interface.ts';
 import { runLLMTask } from '../core/runLLMTask.ts';
 import type { ContentDataMap, ContentType } from '../core/types.ts';
+import { AppError, ERROR_CODES } from '../core/errors.ts';
 
 export async function generate<TType extends ContentType>({
   type,
@@ -19,7 +20,10 @@ export async function generate<TType extends ContentType>({
   traceId?: string;
 }): Promise<ContentDataMap[TType]> {
   if (!generator || typeof generator.generate !== 'function') {
-    throw new Error('ContentGenerator with a generate() function is required');
+    throw new AppError(
+      ERROR_CODES.LLM_ERROR,
+      'ContentGenerator with a generate() function is required'
+    );
   }
 
   const schema = loadSchema(type);
@@ -32,5 +36,14 @@ export async function generate<TType extends ContentType>({
     generator,
     promptBuilder: buildPrompt,
     traceId,
+  }).catch((err) => {
+    if (err instanceof AppError) {
+      throw err;
+    }
+
+    throw new AppError(
+      ERROR_CODES.UNKNOWN_ERROR,
+      err instanceof Error ? err.message : String(err)
+    );
   });
 }

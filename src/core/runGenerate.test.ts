@@ -1,10 +1,44 @@
 import { describe, it, expect } from 'vitest';
 import { runGenerate } from './runGenerate.ts';
+import { ERROR_CODES } from './errors.ts';
 
 import { MockContentGenerator } from '../../tests/mocks/mockContentGenerator.ts';
 import { MockContentEvaluator } from '../../tests/mocks/mockContentEvaluator.ts';
 
 describe('runGenerate', () => {
+  it('should throw LOW_QUALITY when score is below threshold', async () => {
+    const generator = new MockContentGenerator();
+    const evaluator = {
+      evaluate: async () =>
+        JSON.stringify({
+          quality_score: 40,
+          dimensions: {
+            readability: 40,
+            relevance: 40,
+            tone_match: 40,
+            originality: 40,
+          },
+          warnings: [],
+        }),
+    };
+
+    await expect(
+      runGenerate({
+        type: 'blog',
+        templateId: 'seo-v1',
+        context: {
+          topic: '강아지가 혀를 내미는 이유',
+          audience: '초보 반려인',
+        },
+        generator,
+        evaluator,
+      })
+    ).rejects.toMatchObject({
+      code: ERROR_CODES.LOW_QUALITY,
+      message: 'Quality score 40 below threshold 70',
+    });
+  });
+
   it('should generate blog content with valid structure and meta', async () => {
     const generator = new MockContentGenerator();
     const evaluator = new MockContentEvaluator();

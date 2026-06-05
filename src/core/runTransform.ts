@@ -1,6 +1,7 @@
 import { transform } from '../transformer/transform.ts';
 import { hardFilter } from '../validators/hardFilter.ts';
 import { validate } from '../validators/validate.ts';
+import { getQualityThreshold } from '../config/quality.ts';
 import type {
   ContentGenerator,
   ContentEvaluator,
@@ -17,6 +18,7 @@ export async function runTransform<TType extends ContentType>({
   context,
   generator,
   evaluator,
+  traceId,
 }: {
   from: ContentType;
   to: TType;
@@ -25,44 +27,65 @@ export async function runTransform<TType extends ContentType>({
   context?: Record<string, unknown>;
   generator: ContentGenerator;
   evaluator: ContentEvaluator;
+  traceId?: string;
 }): Promise<Envelope<ContentDataMap[TType]>> {
-  const traceId = Math.random().toString(36).slice(2);
-  logInfo('runTransform:start', { traceId, from, to });
+  const resolvedTraceId = traceId ?? Math.random().toString(36).slice(2);
+  logInfo('runTransform:start', { traceId: resolvedTraceId, from, to });
 
-  const data = await transform<TType>({
-    from,
-    to,
-    templateId,
-    input,
-    context: context ?? {},
-    generator,
-    traceId,
-  });
+  try {
+    const data = await transform<TType>({
+      from,
+      to,
+      templateId,
+      input,
+      context: context ?? {},
+      generator,
+      traceId: resolvedTraceId,
+    });
 
-  const filter = hardFilter(data);
+    const filter = hardFilter(data);
 
-  if (!filter.valid) {
-    throw new AppError(ERROR_CODES.HARD_FILTER_FAILED, filter.reason);
+    if (!filter.valid) {
+      throw new AppError(ERROR_CODES.HARD_FILTER_FAILED, filter.reason);
+    }
+
+    const result = await validate({
+      type: to,
+      data,
+      evaluator,
+      traceId: resolvedTraceId,
+    });
+
+    if (!result.valid) {
+      throw new AppError(ERROR_CODES.VALIDATION_ERROR);
+    }
+
+    if (!result.meta) {
+      throw new AppError(ERROR_CODES.VALIDATION_ERROR);
+    }
+
+    const threshold = getQualityThreshold(to);
+
+    if (result.meta.quality_score < threshold) {
+      throw new AppError(
+        ERROR_CODES.LOW_QUALITY,
+        `Quality score ${result.meta.quality_score} below threshold ${threshold}`
+      );
+    }
+
+    return {
+      type: to,
+      data,
+      meta: result.meta,
+    };
+  } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
+
+    throw new AppError(
+      ERROR_CODES.UNKNOWN_ERROR,
+      err instanceof Error ? err.message : String(err)
+    );
   }
-
-  const result = await validate({
-    type: to,
-    data,
-    evaluator,
-    traceId,
-  });
-
-  if (!result.valid) {
-    throw new AppError(ERROR_CODES.VALIDATION_ERROR);
-  }
-
-  if (!result.meta) {
-    throw new AppError(ERROR_CODES.VALIDATION_ERROR);
-  }
-
-  return {
-    type: to,
-    data,
-    meta: result.meta,
-  };
 }

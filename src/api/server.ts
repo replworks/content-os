@@ -146,18 +146,22 @@ export function buildServer({ generator, evaluator }: ServerDeps) {
         meta: result.meta,
       };
     } catch (err) {
-      request.log.error({ traceId, err }, 'request:error');
+      const error =
+        err instanceof AppError
+          ? err
+          : new AppError(
+              ERROR_CODES.UNKNOWN_ERROR,
+              err instanceof Error ? err.message : 'Unknown error'
+            );
 
-      if (err instanceof AppError) {
-        return sendError(reply, traceId, err.code, err.message);
-      }
-
-      return sendError(
-        reply,
+      request.log.error({
         traceId,
-        'UNKNOWN_ERROR',
-        err instanceof Error ? err.message : 'Unknown error'
-      );
+        code: error.code,
+        message: error.message,
+        context: { route: '/generate' },
+      });
+
+      return sendError(reply, traceId, error.code, error.message);
     }
   });
 
@@ -198,18 +202,22 @@ export function buildServer({ generator, evaluator }: ServerDeps) {
         meta: result.meta,
       };
     } catch (err) {
-      request.log.error({ traceId, err }, 'request:error');
+      const error =
+        err instanceof AppError
+          ? err
+          : new AppError(
+              ERROR_CODES.UNKNOWN_ERROR,
+              err instanceof Error ? err.message : 'Unknown error'
+            );
 
-      if (err instanceof AppError) {
-        return sendError(reply, traceId, err.code, err.message);
-      }
-
-      return sendError(
-        reply,
+      request.log.error({
         traceId,
-        'UNKNOWN_ERROR',
-        err instanceof Error ? err.message : 'Unknown error'
-      );
+        code: error.code,
+        message: error.message,
+        context: { route: '/transform' },
+      });
+
+      return sendError(reply, traceId, error.code, error.message);
     }
   });
 
@@ -231,7 +239,13 @@ const start = async () => {
       host: '0.0.0.0',
     });
 
-    console.log('🚀 Content OS API running on http://localhost:3000');
+    fastify.log.info(
+      {
+        code: 'SERVER_START',
+        message: 'Content OS API running on http://localhost:3000',
+      },
+      'server:start'
+    );
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
