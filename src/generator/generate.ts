@@ -9,11 +9,13 @@ export async function generate({
   templateId,
   context,
   generator,
+  traceId,
 }: {
   type: string;
   templateId: string;
   context: any;
   generator: ContentGenerator;
+  traceId?: string;
 }) {
   if (!generator || typeof generator.generate !== 'function') {
     throw new Error('ContentGenerator with a generate() function is required');
@@ -28,5 +30,6 @@ export async function generate({
     context,
     generator,
     promptBuilder: buildPrompt,
+    traceId,
   });
 }

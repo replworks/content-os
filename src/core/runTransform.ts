@@ -5,6 +5,7 @@ import type {
   ContentEvaluator,
 } from '../interfaces/llm.interface.ts';
 import { AppError, ERROR_CODES } from './errors.ts';
+import { logInfo } from './logger.ts';
 
 export async function runTransform({
   from,
@@ -23,6 +24,9 @@ export async function runTransform({
   generator: ContentGenerator;
   evaluator: ContentEvaluator;
 }) {
+  const traceId = Math.random().toString(36).slice(2);
+  logInfo('runTransform:start', { traceId, from, to });
+
   const data = await transform({
     from,
     to,
@@ -30,12 +34,14 @@ export async function runTransform({
     input,
     context,
     generator,
+    traceId,
   });
 
   const result = await validate({
     type: to,
     data,
     evaluator,
+    traceId,
   });
 
   if (!result.valid) {

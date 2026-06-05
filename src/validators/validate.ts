@@ -2,15 +2,18 @@ import { loadSchema } from '../core/loadSchema.ts';
 import { validateSchema } from './schemaValidator.ts';
 import { evaluateQuality } from './qualityEvaluator.ts';
 import type { ContentEvaluator } from '../interfaces/llm.interface.ts';
+import { logInfo } from '../core/logger.ts';
 
 export async function validate({
   type,
   data,
   evaluator,
+  traceId,
 }: {
   type: string;
   data: any;
   evaluator: ContentEvaluator;
+  traceId?: string;
 }) {
   const schema = loadSchema(type);
 
@@ -28,6 +31,11 @@ export async function validate({
   const quality = await evaluateQuality({
     data,
     evaluator,
+  });
+
+  logInfo('validate:done', {
+    traceId,
+    quality_score: quality.quality_score,
   });
 
   return {

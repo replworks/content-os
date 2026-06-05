@@ -24,6 +24,7 @@ describe('runLLMTask', () => {
       input: mockInput,
       generator: mockGenerator,
       promptBuilder: mockPromptBuilder,
+      traceId: 'trace-123',
     });
 
     expect(result).toEqual({ result: 'ok' });
@@ -49,6 +50,7 @@ describe('runLLMTask', () => {
       input: mockInput,
       generator: mockGenerator,
       promptBuilder: mockPromptBuilder,
+      traceId: 'trace-123',
     });
 
     expect(result).toEqual({ title: 'ok' });
@@ -56,14 +58,18 @@ describe('runLLMTask', () => {
     expect(mockGenerator.generate).toHaveBeenNthCalledWith(1, 'PROMPT');
     expect(mockGenerator.generate).toHaveBeenNthCalledWith(2, 'PROMPT');
     expect(mockGenerator.generate).toHaveBeenNthCalledWith(3, 'PROMPT');
-    expect(warnSpy).toHaveBeenNthCalledWith(
-      1,
-      '[runLLMTask] JSON parse failed, retrying... (1/3)'
-    );
-    expect(warnSpy).toHaveBeenNthCalledWith(
-      2,
-      '[runLLMTask] JSON parse failed, retrying... (2/3)'
-    );
+    expect(JSON.parse(warnSpy.mock.calls[0][0])).toMatchObject({
+      level: 'warn',
+      message: 'runLLMTask:retry',
+      traceId: 'trace-123',
+      attempt: 1,
+    });
+    expect(JSON.parse(warnSpy.mock.calls[1][0])).toMatchObject({
+      level: 'warn',
+      message: 'runLLMTask:retry',
+      traceId: 'trace-123',
+      attempt: 2,
+    });
   });
 
   it('should throw JSON_PARSE_ERROR after three invalid JSON responses', async () => {
@@ -81,6 +87,7 @@ describe('runLLMTask', () => {
         input: mockInput,
         generator: mockGenerator,
         promptBuilder: mockPromptBuilder,
+        traceId: 'trace-456',
       })
     ).rejects.toThrow('JSON_PARSE_ERROR');
 

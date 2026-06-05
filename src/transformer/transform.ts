@@ -12,6 +12,7 @@ export async function transform({
   input,
   context,
   generator,
+  traceId,
 }: {
   from: string;
   to: string;
@@ -19,6 +20,7 @@ export async function transform({
   input: any;
   context: any;
   generator: ContentGenerator;
+  traceId?: string;
 }) {
   const schema = loadSchema(to);
   const template = loadTemplate(to, templateId);
@@ -32,5 +34,6 @@ export async function transform({
     },
     generator,
     promptBuilder: buildTransformPrompt,
+    traceId,
   });
 }
