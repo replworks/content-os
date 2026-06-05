@@ -1,8 +1,8 @@
-import {
+import type {
   ContentEvaluator,
   ContentGenerator,
-} from '../interfaces/llm.interface';
-import { model } from './gemini';
+} from '../interfaces/llm.interface.ts';
+import { model } from './gemini.ts';
 
 export class GeminiContentGenerator implements ContentGenerator {
   async generate(prompt: string): Promise<string> {

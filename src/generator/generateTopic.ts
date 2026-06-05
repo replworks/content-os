@@ -1,5 +1,5 @@
-import { parseJSON } from '../utils/parseJSON';
-import { TopicGenerator } from '../interfaces/llm.interface';
+import { parseJSON } from '../utils/parseJSON.ts';
+import { TopicGenerator } from '../interfaces/llm.interface.ts';
 
 export async function generateTopic({
   context,

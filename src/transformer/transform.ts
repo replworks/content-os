@@ -1,7 +1,7 @@
-import { model } from '../core/gemini';
-import { loadTemplate } from '../core/loadTemplate';
-import { buildTransformPrompt } from './promptBuilder';
-import { parseJSON } from '../utils/parseJSON';
+import { model } from '../core/gemini.ts';
+import { loadTemplate } from '../core/loadTemplate.ts';
+import { buildTransformPrompt } from './promptBuilder.ts';
+import { parseJSON } from '../utils/parseJSON.ts';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 export async function transform({
