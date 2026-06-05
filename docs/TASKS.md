@@ -1,207 +1,192 @@
-# Content OS — Implementation Tasks
+# Content OS — Implementation Tasks (TS Core Final)
 
 ---
 
 ## 0. Goal
 
-목표:
-
-> **7~9일 내 실제 동작하는 Content OS MVP 완성 → 운영 가능한 상태까지 확장**
+> **TS Core를 “완전한 실행 엔진”으로 마무리한다**
 
 ---
 
-## Scope (확정)
+## Scope (TS Only)
 
-* CLI 기반 실행
-* Blog 콘텐츠 생성
-* Blog → SNS 변환
-* Validator (schema + quality)
-* TopicGenerator 인터페이스
-* JSON 파일 출력
-* 테스트 포함
-* LLM 인터페이스 기반 (DI 구조)
+TS는 다음만 책임진다:
+
+* generation
+* transformation
+* validation
+* filtering
+* selection
+* logging
+* CLI / API 실행
+
+❌ 제외:
+
+* Feedback Loop
+* Performance 분석
+* DB / Scheduler
+* 외부 orchestration
 
 ---
 
 ## Current Status
 
-현재 시스템은 MVP를 넘어 **운영 직전 단계**에 도달했다.
+현재 상태:
 
-구현 완료:
+> **Production-ready 수준 (거의 완료)**
 
-* Schema / Template 로딩
+완료:
+
 * Generator / Transformer / Validator
 * runGenerate / runTransform
+* runGenerateMany (multi-generation)
 * JSON parse retry
-* AppError (표준 에러 구조)
-* Structured logging + traceId
-* Hard Filter (TS 기반 1차 필터)
-* 강타입 파이프라인 정리
-* Mock 기반 테스트 (LLM 없이 실행 가능)
-* API DI 분리 (Gemini 키 없이 테스트 가능)
-* Multi-generation pipeline 추가
+* AppError 시스템
+* Hard Filter
+* Schema validation
+* Quality evaluation
+* threshold filtering
+* structured logging + traceId
+* CLI
+* API (DI 기반)
+* 테스트 (LLM 없이)
 
 ---
 
-## Phase 1 — Core System (완료)
+# Phase 1 — Core Runtime (완료)
 
-### 포함
-
-* Generator
-* Validator
-* Transformer
-* Pipeline (runGenerate / runTransform)
-
-✅ 완료
+* [x] generate()
+* [x] transform()
+* [x] runGenerate()
+* [x] runTransform()
+* [x] runGenerateMany()
 
 ---
 
-## Phase 2 — Reliability Layer (완료)
+# Phase 2 — Reliability (완료)
 
-### 목표
-
-LLM 불안정성 대응 + 운영 안정성 확보
-
----
-
-### 작업
-
-* [x] JSON parse retry
-* [x] AppError 표준화
-* [x] Structured logging (traceId)
-* [x] Hard Filter (TS-only validation)
-* [x] Error / Retry 테스트
+* [x] JSON retry
+* [x] AppError
+* [x] error codes
+* [x] structured logging
 
 ---
 
-## Phase 3 — Testing (완료)
+# Phase 3 — Validation & Filtering (완료)
 
-### 목표
-
-LLM 없이 전체 테스트 가능
-
----
-
-### 작업
-
-* [x] MockContentGenerator
-* [x] MockContentEvaluator
-* [x] Generator 테스트
-* [x] Transformer 테스트
-* [x] Validator 테스트
-* [x] Pipeline 테스트
-* [x] API DI 기반 테스트 (Gemini 호출 없음)
+* [x] AJV validation
+* [x] Hard Filter
+* [x] VALIDATION_ERROR
+* [x] HARD_FILTER_FAILED
 
 ---
 
-## Phase 4 — Stabilization (운영 준비 단계)
+# Phase 4 — Multi-generation (완료)
 
-### 목표
-
-“운영 가능한 상태”로 마무리
-
----
-
-## 4.1 CLI 안정화
-
-* [x] CLI 에러 출력 개선 (AppError 기반)
-* [x] traceId CLI 출력
-* [x] 실패 시 exit code 명확화 (0 / 1)
-* [x] lint 통과
+* [x] candidate generation
+* [x] topK selection
+* [x] evaluator 최소 호출
+* [x] final selection
 
 ---
 
-## 4.2 Docs 정합성
+# Phase 5 — Quality Control (완료)
 
-* [x] ARCHITECTURE.md ↔ 코드 일치 검증
-* [x] SCHEMAS.md ↔ 실제 schema 검증
-* [x] CONTEXT.md ↔ 실제 context 구조 확인
-* [x] RULES.md ↔ Hard Filter 반영 여부 확인
-
----
-
-## 4.3 Code Cleanup
-
-* [x] 불필요한 console.log 제거 (CLI 사용자 출력 제외)
-* [x] 에러 메시지 통일 (AppError 중심)
-* [x] 타입 정리 (any 최소화)
+* [x] quality_score
+* [x] threshold filtering
+* [x] LOW_QUALITY 에러
 
 ---
 
-## 4.4 Runtime Quality Control (🔥 필수)
+# Phase 6 — API Layer (완료)
 
-### 목표
-
-저품질 콘텐츠가 시스템을 통과하지 못하도록 차단
-
----
-
-### 작업
-
-* [x] config 기반 quality_score threshold 도입
-* [x] threshold 미달 시 AppError 발생
-* [x] 콘텐츠 discard 처리
-* [x] threshold 테스트 추가
+* [x] Fastify server
+* [x] /generate
+* [x] /transform
+* [x] traceId 포함
+* [x] AppError → HTTP mapping
+* [x] mock 테스트
 
 ---
 
-## 4.5 Multi-generation Pipeline
+# Phase 7 — CLI (완료)
 
-* [x] generateMany() 추가
-* [x] top K 검증 전략 적용
-* [x] evaluator 호출 수 제한
-* [x] 최종 후보 선택 테스트 추가
+* [x] generate CLI
+* [x] transform CLI
+* [x] JSON output 저장
+* [x] exit code 처리
 
 ---
 
-### 예시
+# Phase 8 — Testing (완료)
+
+* [x] mock generator
+* [x] mock evaluator
+* [x] pipeline 테스트
+* [x] API 테스트
+* [x] retry 테스트
+* [x] error 테스트
+
+---
+
+# Phase 9 — Final Polish (🔥 남은 것)
+
+## 9.1 Config System (추천)
+
+* [ ] threshold / count / topK config 분리
+* [ ] 환경별 설정 (dev / prod)
+
+---
+
+## 9.2 Context Hook (🔥 중요)
+
+* [ ] 외부 feedback context 주입 가능하도록 구조 정리
+* [ ] context merge 유틸
 
 ```ts
-if (meta.quality_score < threshold) {
-  throw new AppError('LOW_QUALITY', 'Content below threshold');
-}
+context = mergeContext(base, external)
 ```
 
 ---
 
-## 4.6 API Layer
+## 9.3 Selection 전략 확장 (선택)
 
-* [x] traceId 응답 포함
-* [x] request-level logging
-* [x] AppError → HTTP mapping
-* [x] DI 기반 mock 테스트
-* [x] Gemini 없이 테스트 가능
+* [ ] custom scoring hook
+* [ ] quality 외 추가 점수 반영 가능 구조
 
 ---
 
-## Definition of Done
+## 9.4 Logging 개선 (선택)
 
-다음이 모두 가능해야 한다:
+* [ ] log level 분리 (info / warn / error)
+* [ ] production-friendly format 옵션
 
-* [x] CLI로 blog 생성
-* [x] JSON schema 통과
-* [x] quality_score 포함
-* [x] SNS 변환 가능
-* [x] outputs 저장
+---
+
+## 9.5 DX 개선 (선택)
+
+* [ ] CLI help 메시지 개선
+* [ ] 에러 메시지 더 명확하게
+
+---
+
+# Definition of Done
+
+다음이 모두 만족되면 TS는 끝이다:
+
+* [x] 콘텐츠 생성
+* [x] 변환 가능
+* [x] schema 통과
+* [x] quality filtering
+* [x] multi-generation 동작
 * [x] 테스트 통과
-* [x] 에러 발생 시 안정적 복구
-* [x] 로그 기반 디버깅 가능
-* [x] **low quality 콘텐츠 자동 차단 (threshold 적용)**
+* [x] traceId 기반 디버깅
+* [ ] context injection hook 존재
 
 ---
 
-## Not Included (명확히 제외)
+# Final Statement
 
-* Laravel (Scheduler / Queue)
-* API 인증 / 사용자 관리
-* DB
-* Deduplication (Embedding)
-* SaaS 기능
+> TS Core는 “생성 엔진”이다
 
----
-
-## Final Statement
-
-이 시스템은 단순한 LLM wrapper가 아니다.
-
-> **“LLM을 안정적인 콘텐츠 생산 시스템으로 만드는 엔진”이다**
+> **상태를 가지지 않고, 입력을 받아 결과를 반환하는 시스템으로 유지한다**
