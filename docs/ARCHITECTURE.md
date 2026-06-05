@@ -52,94 +52,63 @@ Generator → Validator → Output
 
 ---
 
+### 2.5 LLM Abstraction (중요)
+
+LLM은 직접 호출되지 않는다.
+
+모든 LLM 호출은 인터페이스를 통해 주입된다.
+
+```ts
+ContentGenerator
+ContentEvaluator
+TopicGenerator
+```
+
+→ 시스템은 특정 LLM(Gemini 등)에 의존하지 않는다.
+
+---
+
 ## 3. Directory Structure
 
 ```bash
 content-os/
-├── core/
-│   ├── types.ts
-│   ├── errors.ts
-│   └── config.ts
-│
-├── generator/
-│   ├── index.ts
-│   ├── generate.ts
-│   ├── prompt-builder.ts
-│   └── llm-client.ts
-│
-├── transformer/
-│   ├── index.ts
-│   └── transform.ts
-│
-├── validators/
-│   ├── index.ts
-│   ├── schema-validator.ts
-│   ├── quality-validator.ts
-│   └── dedupe-validator.ts
+├── src/
+│   ├── core/
+│   ├── generator/
+│   ├── transformer/
+│   ├── validators/
+│   ├── interfaces/
+│   └── utils/
 │
 ├── schemas/
-│   ├── blog.schema.json
-│   ├── faq.schema.json
-│   ├── docs.schema.json
-│   └── sns.schema.json
-│
 ├── templates/
-│   ├── blog/
-│   │   ├── seo-v1.json
-│   │   ├── list-v1.json
-│   │   └── story-v1.json
-│   │
-│   ├── docs/
-│   └── sns/
-│
 ├── outputs/
-│   └── *.json
-│
-└── publishers/   (MVP 제외)
+├── tests/
 ```
 
 ---
 
 ## 4. Data Model
 
-## 4.1 Envelope (공통 구조)
-
-모든 콘텐츠는 동일한 구조를 가진다.
+### 4.1 Envelope
 
 ```json
 {
   "type": "blog",
-  "data": { ... },
-  "meta": { ... }
+  "data": {},
+  "meta": {}
 }
 ```
 
 ---
 
-## 4.2 Data (Schema 기반)
+### 4.2 Data (Schema 기반)
 
-각 Content Type은 별도의 schema를 가진다.
-
-예: blog.schema.json
-
-```json
-{
-  "type": "object",
-  "required": ["title", "body_markdown"],
-  "properties": {
-    "title": { "type": "string" },
-    "body_markdown": { "type": "string" },
-    "tags": {
-      "type": "array",
-      "items": { "type": "string" }
-    }
-  }
-}
-```
+각 콘텐츠는 schema를 따른다.
 
 ---
 
-## 4.3 Meta (Validator 생성)
+### 4.3 Meta (Validator 생성)
 
 ```json
 {
@@ -158,98 +127,85 @@ content-os/
 
 ## 5. Core Interfaces
 
-## 5.1 Generate
+### 5.1 LLM Interfaces (핵심)
 
 ```ts
-type GenerateInput = {
-  type: string
-  templateId: string
-  context: Context
-  constraints?: Constraints
+export interface ContentGenerator {
+  generate(prompt: string): Promise<string>;
 }
 
-type GenerateResult = {
-  type: string
-  data: any
+export interface ContentEvaluator {
+  evaluate(prompt: string): Promise<string>;
 }
 
-async function generate(input: GenerateInput): Promise<GenerateResult>
+export interface TopicGenerator {
+  generate(prompt: string): Promise<string>;
+}
 ```
 
 ---
 
-## 5.2 Transform
+### 5.2 Generate
 
 ```ts
-type TransformInput = {
-  from: string
-  to: string
-  input: Envelope
-  templateId?: string
-}
-
-type TransformResult = {
-  type: string
-  data: any
-}
-
-async function transform(input: TransformInput): Promise<TransformResult>
+async function generate({
+  type,
+  templateId,
+  context,
+  generator
+}): Promise<any>
 ```
 
 ---
 
-## 5.3 Validate
+### 5.3 Transform
 
 ```ts
-type ValidateInput = {
-  type: string
-  data: any
-}
+async function transform({
+  from,
+  to,
+  templateId,
+  input,
+  generator
+}): Promise<any>
+```
 
-type ValidateResult = {
+---
+
+### 5.4 Validate
+
+```ts
+async function validate({
+  type,
+  data,
+  evaluator
+}): Promise<{
   valid: boolean
-  errors?: string[]
   meta?: Meta
-}
-
-function validate(input: ValidateInput): ValidateResult
+}>
 ```
 
 ---
 
 ## 6. Execution Flow
 
-## 6.1 Generation Flow
+### 6.1 Generation Flow
 
 ```ts
-async function runGenerate(input: GenerateInput) {
-  // 1. schema load
-  const schema = loadSchema(input.type)
+async function runGenerate(input) {
+  const data = await generate(input)
 
-  // 2. template load
-  const template = loadTemplate(input.type, input.templateId)
-
-  // 3. prompt 생성
-  const prompt = buildPrompt(input, schema, template)
-
-  // 4. LLM 호출
-  const raw = await callLLM(prompt)
-
-  // 5. JSON 파싱
-  const parsed = parseJSON(raw)
-
-  // 6. validation
-  const result = validate({
+  const result = await validate({
     type: input.type,
-    data: parsed
+    data,
+    evaluator: input.evaluator
   })
 
-  if (!result.valid) throw new Error("VALIDATION_FAILED")
+  if (!result.valid) throw new Error("VALIDATION_ERROR")
 
-  // 7. envelope 생성
   return {
     type: input.type,
-    data: parsed,
+    data,
     meta: result.meta
   }
 }
@@ -257,28 +213,23 @@ async function runGenerate(input: GenerateInput) {
 
 ---
 
-## 6.2 Transform Flow
+### 6.2 Transform Flow
 
 ```ts
-async function runTransform(input: TransformInput) {
-  const schema = loadSchema(input.to)
+async function runTransform(input) {
+  const data = await transform(input)
 
-  const prompt = buildTransformPrompt(input, schema)
-
-  const raw = await callLLM(prompt)
-
-  const parsed = parseJSON(raw)
-
-  const result = validate({
+  const result = await validate({
     type: input.to,
-    data: parsed
+    data,
+    evaluator: input.evaluator
   })
 
-  if (!result.valid) throw new Error("VALIDATION_FAILED")
+  if (!result.valid) throw new Error("VALIDATION_ERROR")
 
   return {
     type: input.to,
-    data: parsed,
+    data,
     meta: result.meta
   }
 }
@@ -288,98 +239,47 @@ async function runTransform(input: TransformInput) {
 
 ## 7. Prompt Strategy
 
-## 7.1 Generator Prompt
+### Generator
 
 ```ts
-function buildPrompt(input, schema, template) {
-  return `
-You must generate JSON only.
-
-Schema:
-${JSON.stringify(schema)}
-
-Template:
-${JSON.stringify(template)}
-
-Context:
-${JSON.stringify(input.context)}
-
-Rules:
-- Output valid JSON only
-- Follow schema strictly
-- Do not add extra fields
-- body must be markdown
-
-Generate now.
-`
-}
+generator.generate(prompt)
 ```
 
 ---
 
-## 7.2 Transform Prompt
+### Transformer
 
 ```ts
-function buildTransformPrompt(input, schema) {
-  return `
-Convert the following content into target format.
+generator.generate(prompt)
+```
 
-Source:
-${JSON.stringify(input.input.data)}
+---
 
-Target Schema:
-${JSON.stringify(schema)}
+### Evaluator
 
-Rules:
-- Output valid JSON only
-- Do not include explanation
-
-Generate now.
-`
-}
+```ts
+evaluator.evaluate(prompt)
 ```
 
 ---
 
 ## 8. Validators
 
-## 8.1 Schema Validator
+### 8.1 Schema Validator
 
-```ts
-function validateSchema(schema, data) {
-  const valid = ajv.validate(schema, data)
-  if (!valid) throw Error("SCHEMA_INVALID")
-}
-```
+AJV 기반 검증
 
 ---
 
-## 8.2 Quality Validator
+### 8.2 Quality Evaluator
 
-```ts
-function evaluateQuality(data): Meta {
-  return {
-    quality_score: 0.75,
-    dimensions: {
-      readability: 0.8,
-      relevance: 0.7,
-      tone_match: 0.8,
-      originality: 0.7
-    },
-    warnings: []
-  }
-}
-```
+LLM 기반 평가 (ContentEvaluator 사용)
 
 ---
 
-## 8.3 Deduplication
+### 8.3 Deduplication
 
-```ts
-function checkDuplicate(data) {
-  // 기존 콘텐츠와 비교
-}
-```
+MVP 제외
 
 ---
 
@@ -390,8 +290,6 @@ function checkDuplicate(data) {
 * schema 없음
 * template 없음
 
-→ throw
-
 ---
 
 ### Recoverable Error
@@ -399,38 +297,27 @@ function checkDuplicate(data) {
 * JSON 파싱 실패
 * LLM 출력 이상
 
-→ 호출자 재시도
+→ 호출자가 재시도
 
 ---
 
 ### Soft Fail
 
 * 품질 낮음
-* 중복
+* 경고 발생
 
-→ meta로 전달
+→ meta에 포함
 
 ---
 
 ## 10. Output Example
 
-### Blog
-
 ```json
 {
   "type": "blog",
-  "data": {
-    "title": "강아지가 혀를 내미는 이유",
-    "body_markdown": "..."
-  },
+  "data": {},
   "meta": {
-    "quality_score": 0.82,
-    "dimensions": {
-      "readability": 0.9,
-      "relevance": 0.8,
-      "tone_match": 0.85,
-      "originality": 0.75
-    }
+    "quality_score": 0.82
   }
 }
 ```
@@ -439,25 +326,16 @@ function checkDuplicate(data) {
 
 ## 11. Non Responsibilities
 
-* 스케줄링
+* 스케줄링 (Laravel에서 처리)
 * 배포
 * 저장
 * 사용자 관리
 
 ---
 
-## 12. Next Steps
-
-* SCHEMAS.md 작성
-* TEMPLATE 정의
-* Validator 고도화
-* Batch pipeline 구성
-
----
-
-## 13. Final Statement
+## 12. Final Statement
 
 이 시스템의 핵심은 단 하나다:
 
-> **LLM을 “글쓰기 도구”가 아니라
-> “JSON 생성 함수”로 사용하는 것**
+> **LLM을 직접 호출하지 않는다
+> → 인터페이스를 통해 “JSON 생성 함수”로 사용한다**
