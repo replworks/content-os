@@ -1,4 +1,5 @@
 import { generateMany } from '../generator/generateMany.ts';
+import { selectBest } from '../generator/selector.ts';
 import { validate } from '../validators/validate.ts';
 import { getQualityThreshold } from '../config/quality.ts';
 import type {
@@ -49,7 +50,7 @@ export async function runGenerateMany<TType extends ContentType>({
     });
 
     const rankedCandidates = candidates
-      .sort((a, b) => b.cheapScore - a.cheapScore)
+      .sort((a, b) => b.initialScore - a.initialScore)
       .slice(0, topK);
 
     if (rankedCandidates.length === 0) {
@@ -80,31 +81,21 @@ export async function runGenerateMany<TType extends ContentType>({
 
         return {
           data: candidate.data,
-          qualityScore: result.meta.quality_score,
-          cheapScore: candidate.cheapScore,
           meta: result.meta,
         };
       })
     );
 
-    const bestCandidate = validated
-      .filter(
+    const bestCandidate = selectBest(
+      validated.filter(
         (
           candidate
         ): candidate is {
           data: ContentDataMap[TType];
-          qualityScore: number;
-          cheapScore: number;
           meta: Envelope<ContentDataMap[TType]>['meta'];
         } => candidate !== null
       )
-      .sort((a, b) => {
-        if (b.qualityScore !== a.qualityScore) {
-          return b.qualityScore - a.qualityScore;
-        }
-
-        return b.cheapScore - a.cheapScore;
-      })[0];
+    );
 
     if (!bestCandidate) {
       throw new AppError(

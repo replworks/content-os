@@ -26,6 +26,7 @@ describe('runGenerateMany', () => {
           body_markdown: 'A'.repeat(320),
         },
         cheapScore: 10,
+        initialScore: 10,
       },
       {
         data: {
@@ -34,6 +35,7 @@ describe('runGenerateMany', () => {
           body_markdown: 'B'.repeat(320),
         },
         cheapScore: 50,
+        initialScore: 50,
       },
       {
         data: {
@@ -42,6 +44,7 @@ describe('runGenerateMany', () => {
           body_markdown: 'C'.repeat(320),
         },
         cheapScore: 40,
+        initialScore: 40,
       },
     ] as never);
 
@@ -104,6 +107,82 @@ describe('runGenerateMany', () => {
     expect(result.data.title).toBe('Candidate C');
   });
 
+  it('should choose the best candidate by composite score when quality values differ', async () => {
+    vi.mocked(generateMany).mockResolvedValue([
+      {
+        data: {
+          title: 'Candidate A',
+          summary: 'Candidate A summary with a friendly tone.',
+          body_markdown: 'A'.repeat(320),
+        },
+        cheapScore: 40,
+        initialScore: 40,
+      },
+      {
+        data: {
+          title: 'Candidate B',
+          summary: 'Candidate B summary with a formal tone.',
+          body_markdown: 'B'.repeat(320),
+        },
+        cheapScore: 50,
+        initialScore: 50,
+      },
+    ] as never);
+
+    vi.mocked(validate).mockImplementation(async ({ data }) => {
+      const title = (data as any).title;
+
+      if (title === 'Candidate A') {
+        return {
+          valid: true,
+          meta: {
+            quality_score: 80,
+            dimensions: {
+              readability: 95,
+              relevance: 80,
+              tone_match: 95,
+              originality: 80,
+            },
+            warnings: [],
+          },
+        } as never;
+      }
+
+      return {
+        valid: true,
+        meta: {
+          quality_score: 80,
+          dimensions: {
+            readability: 40,
+            relevance: 80,
+            tone_match: 40,
+            originality: 80,
+          },
+          warnings: [],
+        },
+      } as never;
+    });
+
+    const result = await runGenerateMany({
+      type: 'blog',
+      templateId: 'seo-v1',
+      context: {
+        topic: '강아지가 혀를 내미는 이유',
+      },
+      generator: {
+        generate: vi.fn(),
+      },
+      evaluator: {
+        evaluate: vi.fn(),
+      },
+      traceId: 'trace-score',
+      count: 5,
+      topK: 2,
+    });
+
+    expect(result.data.title).toBe('Candidate A');
+  });
+
   it('should throw LOW_QUALITY when no top candidate passes threshold', async () => {
     vi.mocked(generateMany).mockResolvedValue([
       {
@@ -113,6 +192,7 @@ describe('runGenerateMany', () => {
           body_markdown: 'A'.repeat(320),
         },
         cheapScore: 10,
+        initialScore: 10,
       },
     ] as never);
 
