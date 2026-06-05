@@ -1,5 +1,6 @@
 import { parseJSON } from '../utils/parseJSON.ts';
 import type { ContentGenerator } from '../interfaces/llm.interface.ts';
+import { AppError, ERROR_CODES } from './errors.ts';
 
 export async function runLLMTask({
   schema,
@@ -26,13 +27,19 @@ export async function runLLMTask({
   const maxAttempts = 3;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    const text = await generator.generate(prompt);
+    let text: string;
+
+    try {
+      text = await generator.generate(prompt);
+    } catch {
+      throw new AppError(ERROR_CODES.LLM_ERROR);
+    }
 
     try {
       return parseJSON(text);
     } catch {
       if (attempt === maxAttempts) {
-        throw new Error('JSON_PARSE_ERROR');
+        throw new AppError(ERROR_CODES.JSON_PARSE_ERROR);
       }
 
       console.warn(
@@ -41,5 +48,5 @@ export async function runLLMTask({
     }
   }
 
-  throw new Error('JSON_PARSE_ERROR');
+  throw new AppError(ERROR_CODES.JSON_PARSE_ERROR);
 }

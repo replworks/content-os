@@ -1,4 +1,5 @@
 import type { ContentEvaluator } from '../interfaces/llm.interface.ts';
+import { AppError, ERROR_CODES } from '../core/errors.ts';
 
 export async function evaluateQuality({
   data,
@@ -8,7 +9,7 @@ export async function evaluateQuality({
   evaluator: ContentEvaluator;
 }) {
   if (!evaluator) {
-    throw new Error('QUALITY_LLM_REQUIRED');
+    throw new AppError(ERROR_CODES.LLM_ERROR, 'QUALITY_LLM_REQUIRED');
   }
 
   const prompt = `

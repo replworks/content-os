@@ -4,6 +4,7 @@ import type {
   ContentGenerator,
   ContentEvaluator,
 } from '../interfaces/llm.interface.ts';
+import { AppError, ERROR_CODES } from './errors.ts';
 
 export async function runGenerate({
   type,
@@ -30,6 +31,10 @@ export async function runGenerate({
     data,
     evaluator,
   });
+
+  if (!result.valid) {
+    throw new AppError(ERROR_CODES.VALIDATION_ERROR);
+  }
 
   return {
     type,
