@@ -4,6 +4,7 @@ import type {
   ContentGenerator,
   ContentEvaluator,
 } from '../interfaces/llm.interface.ts';
+import { AppError, ERROR_CODES } from './errors.ts';
 
 export async function runTransform({
   from,
@@ -38,7 +39,7 @@ export async function runTransform({
   });
 
   if (!result.valid) {
-    throw new Error('VALIDATION_ERROR');
+    throw new AppError(ERROR_CODES.VALIDATION_ERROR);
   }
 
   return {

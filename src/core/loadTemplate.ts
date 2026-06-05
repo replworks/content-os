@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { AppError, ERROR_CODES } from './errors.ts';
 
 export function loadTemplate(type: string, templateId: string) {
   const filePath = path.join(
@@ -10,7 +11,10 @@ export function loadTemplate(type: string, templateId: string) {
   );
 
   if (!fs.existsSync(filePath)) {
-    throw new Error(`Template not found: ${type}/${templateId}`);
+    throw new AppError(
+      ERROR_CODES.TEMPLATE_NOT_FOUND,
+      `Template not found: ${type}/${templateId}`
+    );
   }
 
   const raw = fs.readFileSync(filePath, 'utf-8');
