@@ -1,5 +1,3 @@
-# TASKS.md
-
 # Content OS — Implementation Tasks
 
 ---
@@ -8,7 +6,7 @@
 
 목표:
 
-> **7~9일 내 실제 동작하는 Content OS MVP 완성**
+> **안정적인 Content Engine을 완성하고, 이후 Content OS(Runtime)로 확장한다**
 
 ---
 
@@ -27,368 +25,244 @@
 
 ## Current Status
 
-현재 핵심 기능은 구현되어 있습니다:
+현재 Core Engine은 완성 상태:
 
 * Schema / template 로딩
-* Generator / Validator / Transformer
+* Generator / Transformer / Validator
 * runGenerate / runTransform
 * TopicGenerator 인터페이스 정의
 * CLI 실행 + outputs 저장
 * Mock 기반 테스트
+
+### Reliability & Safety (완료)
+
 * JSON parse retry
-* Standardized error handling
+* AppError 기반 에러 표준화
 * Structured logging + traceId
-* Hard Filter (TS-only 1차 필터)
-
-안정화 단계(Day 9)는 일부 정리 작업이 남아 있습니다.
+* Hard Filter (TS 기반 1차 필터)
+* 테스트 커버리지 확보
 
 ---
 
-## Day 1 — Project Bootstrap
+# Phase 1 — Content Engine (완료 단계)
+
+## Day 1 ~ Day 8
+
+모든 핵심 기능 완료됨.
+
+---
+
+## Day 9 — Stabilization (마무리 단계)
 
 ### 목표
 
-개발 환경 + 기본 구조 완성
+운영 가능한 안정성 확보
 
 ---
 
 ### 작업
 
-* [x] Node 프로젝트 생성
-* [x] TypeScript 설정
-* [x] 필수 패키지 설치 (ajv, vitest)
-
----
-
-### 디렉토리 구조 생성
-
-```bash
-content-os/
-├── src/
-│   ├── core/
-│   ├── generator/
-│   ├── transformer/
-│   ├── validators/
-│   ├── interfaces/
-│   └── utils/
-│
-├── schemas/
-├── templates/
-├── outputs/
-├── tests/
-```
+* [ ] CLI UX 개선 (에러 출력 / 결과 포맷 정리)
+* [ ] 로그 포맷 정리 (불필요 로그 제거)
+* [ ] traceId propagation 점검
+* [ ] 문서 정합성 체크 (ARCHITECTURE / CONTEXT / RULES)
+* [ ] 에러 메시지 통일성 점검
 
 ---
 
 ### 완료 조건
 
-* ts-node 실행 가능
-* 기본 구조 생성 완료
+* CLI 실행 시 디버깅 가능
+* 로그만으로 문제 추적 가능
+* 문서 ↔ 코드 불일치 없음
 
 ---
 
-## Day 2 — Schema & Template Loader
+# 🚀 Phase 2 — Content OS Core (다음 단계)
+
+> 이제부터가 IDEAS.md 구현 영역
+
+---
+
+## Day 10 — Topic Generation
 
 ### 목표
 
-파일 기반 설정 로딩
+콘텐츠 “주제 생성 시스템” 구축
 
 ---
 
 ### 작업
 
-* [x] loadSchema(type)
-* [x] loadTemplate(type, templateId)
-* [x] 파일 없을 경우 throw
+* [ ] TopicGenerator 구현체 (Gemini 기반)
+* [ ] topic schema 정의
+* [ ] generateTopic() 함수 구현
+* [ ] topic 테스트 작성
 
 ---
 
-### 완료 조건
-
-* schema/template 정상 로딩
-* 에러 처리 동작
-
----
-
-## Day 3 — Generator (DI 기반)
-
-### 목표
-
-LLM 추상화 기반 콘텐츠 생성
-
----
-
-### 작업
-
-* [x] ContentGenerator 인터페이스 정의
-* [x] TopicGenerator 인터페이스 정의
-* [x] generate() 구현 (generator 주입)
-* [x] prompt builder 구현
-* [x] JSON only output 강제
-* [x] envelope/data/meta 구조 유지
-
----
-
-### 핵심 규칙
-
-* LLM 직접 호출 금지
-* generator.generate(prompt) 사용
-
----
-
-### 완료 조건
+### 결과
 
 ```ts
-await generate({
-  type,
-  templateId,
-  context,
-  generator
-})
+topics = await generateTopics({ context })
 ```
 
 ---
 
-## Day 4 — Validator (Schema + Quality)
+## Day 11 — Multi Generation
 
 ### 목표
 
-검증 + meta 생성
+한 번에 여러 콘텐츠 생성
 
 ---
 
 ### 작업
 
-* [x] AJV schema validator
-* [x] ContentEvaluator 인터페이스 정의
-* [x] quality evaluator (evaluator 주입)
+* [ ] generateMany() 구현
+* [ ] 병렬 실행 처리
+* [ ] traceId 그룹 관리
+* [ ] 실패 개별 처리
 
 ---
 
-### Quality 기준
-
-* readability
-* relevance
-* tone_match
-* originality
-
----
-
-### 완료 조건
+### 결과
 
 ```ts
-await validate({
-  type,
-  data,
-  evaluator
-})
+candidates = await generateMany({ topic, count: 5 })
 ```
 
 ---
 
-## Day 5 — Generate Pipeline
+## Day 12 — Candidate Selection
 
 ### 목표
 
-Generator + Validator 연결
+여러 결과 중 선택
 
 ---
 
 ### 작업
 
-* [x] runGenerate() 구현
-* [x] JSON parse retry
-* [x] AppError / error code standardization
-* [x] Structured logging + traceId
+* [ ] selection 전략 구현
+
+  * 최고 점수 선택
+  * threshold 필터
+* [ ] reject 처리
+* [ ] selection 테스트
 
 ---
 
-### 흐름
+### 결과
 
 ```ts
-generate → validate → envelope
+best = selectBest(candidates)
 ```
 
 ---
 
-### 완료 조건
-
-* envelope 구조 반환
-* meta 포함
-
----
-
-## Day 6 — Transformer (DI 기반)
+## Day 13 — Content Pipeline
 
 ### 목표
 
-콘텐츠 변환 시스템 구축
+전체 흐름 연결
 
 ---
 
 ### 작업
 
-* [x] transform() 구현 (generator 주입)
-* [x] transform prompt 작성
-* [x] validator 재사용
-* [x] AppError / error code standardization
-* [x] Structured logging + traceId
-
----
-
-### 흐름
+* [ ] pipeline 함수 구현
 
 ```ts
-blog → transform → validate → sns
+topic → generateMany → filter → validate → select
 ```
 
 ---
 
 ### 완료 조건
 
-* SNS 변환 성공
-* schema 통과
+* 한 번의 실행으로 최종 콘텐츠 생성
 
 ---
 
-## Day 7 — CLI + Output
+## Day 14 — Output Strategy
 
 ### 목표
 
-실행 가능 상태
+운영 가능한 출력 구조
 
 ---
 
 ### 작업
 
-* [x] CLI 작성
-* [x] generator / evaluator 구현체 연결
-* [x] outputs 저장
+* [ ] outputs 구조 개선
+* [ ] topic / candidates / final 분리 저장
+* [ ] traceId 기반 파일 관리
 
 ---
 
-## Day 8 — Reliability & Safety
+---
 
-### 목표
+# Phase 3 — Runtime (Laravel 영역)
 
-런타임 안정성 강화
+> TS 영역 아님 (설계만)
 
 ---
 
-### 작업
+## 목표
 
-* [x] JSON parse retry in `runLLMTask()`
-* [x] Standardized `AppError`
-* [x] Structured logger utilities
-* [x] Hard Filter 1차 필터
-* [x] Retry / validation / hard-filter tests
+지속적인 콘텐츠 운영
 
 ---
 
-## Day 9 — Stabilization
+### 구성
 
-### 목표
-
-문서/테스트/구조 정합성 마무리
-
----
-
-### 작업
-
-* [x] Error tests grouped by failure mode
-* [x] Logger tests
-* [x] Hard filter tests
-* [ ] CLI / docs final cleanup
-* [ ] Optional: add request-level trace propagation to API layer
+* Queue
+* Batch
+* Scheduler (cron)
+* API 호출 (TS)
 
 ---
 
-### 완료 조건
+### 역할 분리
 
-* CLI 실행 → JSON 생성
-
----
-
-## Day 8 — Testing (Mock 기반)
-
-### 목표
-
-LLM 없이 테스트 가능
+| 역할             | 담당      |
+| -------------- | ------- |
+| Content Engine | TS      |
+| Orchestration  | Laravel |
 
 ---
 
-### 작업
-
-* [x] Mock ContentGenerator
-* [x] Mock ContentEvaluator
-* [x] generator 테스트
-* [x] validator 테스트
-* [x] pipeline 테스트
-
 ---
 
-### 완료 조건
-
-```bash
-npx vitest
-```
-
-→ 모든 테스트 통과
-
----
-
-## Day 9 — Stabilization
-
-### 목표
-
-실사용 안정성 확보
-
----
-
-### 작업
-
-* [ ] JSON parse retry
-* [ ] 에러 코드 표준화
-* [ ] logging
-
----
-
-### 에러 타입
-
-* VALIDATION_ERROR
-* JSON_PARSE_ERROR
-* LLM_ERROR
-
----
-
-### 완료 조건
-
-* 실패 시 재시도 가능
-* 디버깅 가능
-
----
-
-## Definition of Done
+## Definition of Done (Phase 1)
 
 * CLI 실행 가능
 * JSON schema 통과
 * meta 포함
 * SNS 변환 가능
 * 테스트 통과
+* 에러/로그/필터 안정화 완료
 
 ---
 
-## Not Included
+## Definition of Done (Phase 2)
 
-* 스케줄링 (Laravel 담당)
-* API 서버 (core MVP에는 포함되지 않음; `src/api/server.ts`는 별도 스터브)
-* DB
-* deduplication
+* topic 생성 가능
+* multi generation 가능
+* 자동 선택 가능
+* pipeline 완성
 
 ---
 
 ## Final Statement
 
-이 문서의 목적은 단 하나다.
+이 시스템은 두 단계로 완성된다:
 
-> **LLM에 의존하지 않고도 테스트 가능한 시스템을 만드는 것**
+> 1. **절대 깨지지 않는 Content Engine (TS)**
+> 2. **멈추지 않는 Content OS (Laravel Runtime)**
+
+현재 상태:
+
+> ✅ Engine 완성 직전
+> 🔜 OS 구축 단계 진입
