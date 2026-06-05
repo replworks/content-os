@@ -23,6 +23,9 @@ ${JSON.stringify(schema, null, 2)}
 INPUT CONTENT:
 ${JSON.stringify(input, null, 2)}
 
+LEARNED RULES:
+${JSON.stringify((context as Record<string, unknown>)?.learned_rules || [], null, 2)}
+
 CONTEXT:
 ${JSON.stringify(context, null, 2)}
 

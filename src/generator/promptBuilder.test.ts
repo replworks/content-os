@@ -34,6 +34,7 @@ describe('buildPrompt', () => {
     expect(prompt).toContain('SCHEMA');
     expect(prompt).toContain('TEMPLATE');
     expect(prompt).toContain('CONTEXT');
+    expect(prompt).toContain('LEARNED RULES');
 
     // 🔥 JSON stringify 포함 여부
     expect(prompt).toContain('"type": "object"');

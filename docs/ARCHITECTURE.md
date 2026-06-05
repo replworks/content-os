@@ -167,3 +167,101 @@ export interface TopicGenerator {
   generate(prompt: string): Promise<string>;
 }
 ```
+
+## 9. Feedback Loop (Performance-driven Evolution)
+
+Content OS는 단순 생성 시스템이 아니라
+성과 기반으로 **스스로 개선되는 시스템**이다.
+
+### 목적
+
+* 어떤 콘텐츠가 잘 되는지 학습
+* 다음 generation 품질 개선
+* 선택 전략 최적화
+
+---
+
+### 위치 (Out of Core Scope)
+
+Feedback Loop는 core TS runtime이 아닌
+**external layer (Laravel / Scheduler / Worker)** 에서 동작한다.
+
+Core는 다음만 담당:
+
+* 콘텐츠 생성
+* meta (quality_score 등) 생성
+
+---
+
+### 데이터 흐름
+
+```text
+Generate → Output(JSON) → Publish
+                        ↓
+                 Performance Data 수집
+                        ↓
+                 Feedback Store (JSON/DB)
+                        ↓
+                 Context / Template 업데이트
+                        ↓
+                 다음 generation에 반영
+```
+
+---
+
+### 저장 데이터 (예시)
+
+```json
+{
+  "content_id": "uuid",
+  "type": "blog",
+  "topic": "강아지가 혀를 내미는 이유",
+  "quality_score": 82,
+  "performance": {
+    "views": 1200,
+    "clicks": 80,
+    "ctr": 0.067,
+    "engagement": 0.45
+  },
+  "timestamp": 1710000000
+}
+```
+
+---
+
+### 적용 방식
+
+Feedback은 직접 generator를 바꾸지 않는다.
+
+대신:
+
+* context 강화
+* template 수정
+* topic selection 개선
+
+---
+
+### 적용 예시
+
+```ts
+context = {
+  topic: "강아지 행동",
+  preferred_patterns: ["리스트형", "짧은 문장"],
+  avoid_patterns: ["너무 긴 문단"],
+}
+```
+
+---
+
+### 설계 원칙
+
+* 실시간 반영 금지 (batch 처리)
+* low-cost 분석 우선 (rule 기반)
+* LLM 사용 최소화
+
+---
+
+### 핵심 철학
+
+> LLM은 학습하지 않는다  
+> → 우리는 입력을 개선한다

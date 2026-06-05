@@ -5,6 +5,8 @@ import { loadSchema } from '../core/loadSchema.ts';
 import { runLLMTask } from '../core/runLLMTask.ts';
 import type { ContentDataMap, ContentType } from '../core/types.ts';
 import { AppError, ERROR_CODES } from '../core/errors.ts';
+import { loadAllPerformance } from '../feedback/performanceStore.ts';
+import { extractRules } from '../feedback/ruleExtractor.ts';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 export async function transform<TType extends ContentType>({
@@ -24,6 +26,8 @@ export async function transform<TType extends ContentType>({
   generator: ContentGenerator;
   traceId?: string;
 }): Promise<ContentDataMap[TType]> {
+  const pastPerformance = await loadAllPerformance(to);
+  const learnedRules = extractRules(pastPerformance).rules;
   const schema = loadSchema(to);
   const template = loadTemplate(to, templateId);
 
@@ -33,6 +37,7 @@ export async function transform<TType extends ContentType>({
     context: {
       source: input,
       ...context,
+      learned_rules: learnedRules,
     },
     generator,
     promptBuilder: buildTransformPrompt,

@@ -29,6 +29,7 @@ describe('buildTransformPrompt', () => {
 
     // 🔥 핵심 섹션 존재
     expect(prompt).toContain('INPUT CONTENT');
+    expect(prompt).toContain('LEARNED RULES');
     expect(prompt).toContain('TEMPLATE');
 
     // 🔥 JSON 포함 확인

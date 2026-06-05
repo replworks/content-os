@@ -22,6 +22,9 @@ ${JSON.stringify(schema, null, 2)}
 TEMPLATE:
 ${JSON.stringify(template, null, 2)}
 
+LEARNED RULES:
+${JSON.stringify((context as Record<string, unknown>)?.learned_rules || [], null, 2)}
+
 CONTEXT:
 ${JSON.stringify(context, null, 2)}
 

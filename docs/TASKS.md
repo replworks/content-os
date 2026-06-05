@@ -174,6 +174,62 @@ if (meta.quality_score < threshold) {
 
 ---
 
+## Phase 5 — Feedback Loop (성과 기반 진화)
+
+### 목표
+
+콘텐츠 성과 데이터를 기반으로
+다음 generation 품질을 자동으로 개선한다.
+
+---
+
+### 5.1 Feedback Storage
+
+* [x] outputs에 content_id 추가
+* [x] performance JSON 저장 구조 정의
+* [x] feedback 저장 경로 결정 및 `outputs/performance/` 구현
+* [x] 과거 성과를 로드하고 prompt에 주입하는 구조 설계
+
+---
+
+### 5.2 Performance Data Ingestion
+
+* [x] 외부 데이터 입력 포맷 정의 (views, ctr 등)
+* [ ] CLI 또는 script로 performance 업데이트 가능하게 구현
+* [ ] 운영용 성과 업로드/매핑 워크플로우 구체화
+
+---
+
+### 5.3 Feedback Analyzer (low-cost)
+
+* [ ] rule 기반 분석기 구현
+* [ ] high-performing 패턴 추출
+* [ ] low-performing 패턴 제거
+
+---
+
+### 5.4 Context Injection
+
+* [ ] generate 시 feedback 기반 context merge
+* [ ] preferred / avoid 패턴 적용
+
+---
+
+### 5.5 Topic Selection 개선 (선택)
+
+* [ ] TopicGenerator에 feedback 반영
+* [ ] 잘 되는 topic 강화
+
+---
+
+### 완료 조건
+
+* 성과 데이터 저장 가능
+* 다음 generation에 반영됨
+* 품질 개선 루프 확인 가능
+
+---
+
 ## Definition of Done
 
 다음이 모두 가능해야 한다:

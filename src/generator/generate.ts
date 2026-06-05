@@ -5,6 +5,8 @@ import type { ContentGenerator } from '../interfaces/llm.interface.ts';
 import { runLLMTask } from '../core/runLLMTask.ts';
 import type { ContentDataMap, ContentType } from '../core/types.ts';
 import { AppError, ERROR_CODES } from '../core/errors.ts';
+import { loadAllPerformance } from '../feedback/performanceStore.ts';
+import { extractRules } from '../feedback/ruleExtractor.ts';
 
 export async function generate<TType extends ContentType>({
   type,
@@ -26,13 +28,18 @@ export async function generate<TType extends ContentType>({
     );
   }
 
+  const pastPerformance = await loadAllPerformance(type);
+  const learnedRules = extractRules(pastPerformance).rules;
   const schema = loadSchema(type);
   const template = loadTemplate(type, templateId);
 
   return runLLMTask<ContentDataMap[TType]>({
     schema,
     template,
-    context,
+    context: {
+      ...context,
+      learned_rules: learnedRules,
+    },
     generator,
     promptBuilder: buildPrompt,
     traceId,
