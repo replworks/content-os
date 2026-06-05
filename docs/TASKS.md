@@ -38,6 +38,7 @@
 * Hard Filter (TS 기반 1차 필터)
 * 강타입 파이프라인 정리
 * Mock 기반 테스트 (LLM 없이 실행 가능)
+* API DI 분리 및 Gemini 키 없이 테스트 가능
 
 ---
 
@@ -128,6 +129,7 @@ LLM 없이 전체 테스트 가능
 
 * [x] API layer traceId 연결
 * [x] request-level logging
+* [x] Gemini 키 없이 API 테스트 가능
 * [ ] config 기반 threshold (quality_score)
 
 ---
