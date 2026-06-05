@@ -17,6 +17,7 @@ export async function runTransform<TType extends ContentType>({
   context,
   generator,
   evaluator,
+  traceId,
 }: {
   from: ContentType;
   to: TType;
@@ -25,9 +26,10 @@ export async function runTransform<TType extends ContentType>({
   context?: Record<string, unknown>;
   generator: ContentGenerator;
   evaluator: ContentEvaluator;
+  traceId?: string;
 }): Promise<Envelope<ContentDataMap[TType]>> {
-  const traceId = Math.random().toString(36).slice(2);
-  logInfo('runTransform:start', { traceId, from, to });
+  const resolvedTraceId = traceId ?? Math.random().toString(36).slice(2);
+  logInfo('runTransform:start', { traceId: resolvedTraceId, from, to });
 
   const data = await transform<TType>({
     from,
@@ -36,7 +38,7 @@ export async function runTransform<TType extends ContentType>({
     input,
     context: context ?? {},
     generator,
-    traceId,
+    traceId: resolvedTraceId,
   });
 
   const filter = hardFilter(data);
@@ -49,7 +51,7 @@ export async function runTransform<TType extends ContentType>({
     type: to,
     data,
     evaluator,
-    traceId,
+    traceId: resolvedTraceId,
   });
 
   if (!result.valid) {

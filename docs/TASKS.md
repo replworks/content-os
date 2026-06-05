@@ -103,9 +103,10 @@ LLM 없이 전체 테스트 가능
 
 ## 4.1 CLI 안정화
 
-* [ ] CLI 에러 출력 개선 (AppError 기반)
-* [ ] traceId CLI 출력
-* [ ] 실패 시 exit code 명확화 (0 / 1)
+* [x] CLI 에러 출력 개선 (AppError 기반)
+* [x] traceId CLI 출력
+* [x] 실패 시 exit code 명확화 (0 / 1)
+* [x] lint 통과
 
 ---
 
