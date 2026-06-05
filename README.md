@@ -1,165 +1,58 @@
 # Content OS
 
-> **Stop writing content. Start running it.**
+> **LLM을 “콘텐츠 생성 도구”가 아니라
+> “멈추지 않는 콘텐츠 운영 시스템”으로 만드는 엔진**
 
 ---
 
-## What is Content OS?
+## 🚀 What is Content OS?
 
-Content OS는 콘텐츠 생성 도구가 아니다.
+Content OS는 단순한 글 생성기가 아니다.
 
-> **콘텐츠가 멈추지 않도록 만드는 운영 시스템이다.**
+> **콘텐츠가 멈추지 않게 만드는 자동 운영 시스템이다**
 
-대부분의 서비스는 이렇게 죽는다:
+핵심 개념:
 
-1. 블로그를 만든다
-2. 몇 개 글을 쓴다
-3. 바빠진다
-4. 콘텐츠가 멈춘다
-
-결과:
-
-> 서비스는 살아있지만
-> 밖에서는 죽은 서비스처럼 보인다
+* 콘텐츠를 “한 개 잘 만드는 것”이 아니라
+* **지속적으로 생성 → 검증 → 필터링하는 구조**
 
 ---
 
-## The Idea
-
-Content OS는 문제를 이렇게 정의한다:
-
-> ❌ 글을 잘 못 써서 문제가 아니다
-> ✅ 콘텐츠를 계속 만들 수 있는 시스템이 없다
-
-그래서 접근을 바꾼다:
+## ⚙️ Core Concept
 
 ```text
-1개 작성 → 발행 ❌
-10개 생성 → 검증 → 선택 → 발행 ✅
-```
-
----
-
-## Core Concept
-
-Content OS는 LLM을 이렇게 사용한다:
-
-> ❌ 글쓰기 도구
-> ✅ JSON 생성 함수
-
-모든 콘텐츠는 다음 구조를 가진다:
-
-```json
-{
-  "type": "blog",
-  "data": { ... },
-  "meta": { ... }
-}
-```
-
----
-
-## How It Works
-
-```text
-Generate → Validate → Output
+Generate → Validate → Filter → Output
               ↓
-        Transform (SNS)
-              ↓
-           Validate
+         Transform → Validate
 ```
 
 ---
 
-## Key Components
+## 🧠 Key Features
 
-### 1. Generator
-
-* JSON 생성만 담당
-* 판단하지 않음
-* Stateless
-
----
-
-### 2. Validator
-
-* Schema 검증
-* Quality 평가 (LLM)
-* Meta 생성
+* Schema 기반 콘텐츠 생성 (JSON-first)
+* LLM 추상화 (DI 구조)
+* 자동 품질 평가 (LLM evaluator)
+* Quality threshold 기반 필터링
+* Hard Filter (TS 기반 안전 필터)
+* JSON parse retry (안정성)
+* Structured logging + traceId
+* 테스트 (LLM 없이 실행 가능)
 
 ---
 
-### 3. Transformer
-
-* Blog → SNS 변환
-* JSON → JSON
-
----
-
-### 4. Pipeline
-
-* 재시도
-* 폐기
-* 최종 결정
-
----
-
-## Example Output
-
-```json
-{
-  "type": "blog",
-  "data": {
-    "title": "강아지가 혀를 내미는 이유",
-    "summary": "...",
-    "body_markdown": "..."
-  },
-  "meta": {
-    "quality_score": 85,
-    "dimensions": {
-      "readability": 90,
-      "relevance": 80,
-      "tone_match": 85,
-      "originality": 75
-    },
-    "warnings": ["Some minor grammar issues."]
-  }
-}
-```
-
----
-
-## Why This Works
-
-기존 방식:
-
-* 사람이 직접 작성
-* 품질 높음
-* 지속 불가능
-
-Content OS:
-
-* AI 대량 생성
-* Validator 필터링
-* 지속 가능
-
----
-
-## Design Principles
-
-* JSON First
-* Schema Driven
-* LLM Abstraction (DI)
-* Separation of Concerns
-* Testable by Design
-
----
-
-## Project Structure
+## 📦 Project Structure
 
 ```bash
 content-os/
 ├── src/
+│   ├── core/
+│   ├── generator/
+│   ├── transformer/
+│   ├── validators/
+│   ├── interfaces/
+│   └── utils/
+│
 ├── schemas/
 ├── templates/
 ├── outputs/
@@ -168,9 +61,7 @@ content-os/
 
 ---
 
-## Getting Started
-
-### 1. Install
+## 🛠 Installation
 
 ```bash
 npm install
@@ -178,78 +69,148 @@ npm install
 
 ---
 
-### 2. Run
+## ▶️ Usage (CLI)
+
+### 1. Blog 생성
 
 ```bash
-npx ts-node cli/generate-blog.ts
+npx ts-node src/cli.ts generate \
+  --type=blog \
+  --template=seo-v1 \
+  --context='{"topic":"강아지가 혀를 내미는 이유"}'
 ```
 
 ---
 
-### 3. Output
+### 2. Blog → SNS 변환
 
 ```bash
-outputs/blog-*.json
+npx ts-node src/cli.ts transform \
+  --from=blog \
+  --to=sns \
+  --template=sns-transform \
+  --input='{"title":"강아지 행동"}'
 ```
 
 ---
 
-## Testing
+## 📤 Output Format
+
+모든 결과는 동일한 구조를 따른다:
+
+```json
+{
+  "type": "blog",
+  "data": {},
+  "meta": {
+    "quality_score": 85,
+    "dimensions": {
+      "readability": 90,
+      "relevance": 80,
+      "tone_match": 85,
+      "originality": 75
+    },
+    "warnings": []
+  }
+}
+```
+
+---
+
+## 🔒 Quality Control
+
+Content OS는 저품질 콘텐츠를 자동으로 차단한다.
+
+```ts
+if (quality_score < threshold) {
+  throw LOW_QUALITY
+}
+```
+
+### Threshold 설정
+
+```ts
+export const QUALITY_THRESHOLD = {
+  blog: 70,
+  sns: 60,
+  default: 65,
+};
+```
+
+---
+
+## 🧪 Testing
+
+LLM 없이 테스트 가능:
 
 ```bash
 npx vitest
 ```
 
-LLM 없이도 테스트 가능하다.
+---
+
+## 🔌 LLM Integration
+
+LLM은 직접 호출하지 않는다.
+
+```ts
+ContentGenerator
+ContentEvaluator
+```
+
+예시:
+
+```ts
+const generator = new GeminiContentGenerator();
+```
 
 ---
 
-## What’s Included (MVP)
+## 🧱 Architecture
 
-* Blog 콘텐츠 생성
-* Blog → SNS 변환
-* Schema validation
-* Quality scoring
-* CLI 실행
-* JSON output
+핵심 구조:
+
+* Generator → 콘텐츠 생성
+* Validator → schema + quality 검증
+* Transformer → 콘텐츠 변환
+* Pipeline → 실행 orchestration
 
 ---
 
-## What’s NOT Included
+## ❗ Important Design Principle
 
-* API 서버
-* 스케줄링 (Laravel에서 처리)
+> LLM은 “결과를 만드는 존재”가 아니다
+> → **후보를 만드는 존재다**
+
+Content OS는:
+
+* 여러 결과를 만들고
+* 검증하고
+* 필터링한다
+
+---
+
+## 🚫 Not Included
+
+* Scheduler (Laravel에서 처리)
 * DB
-* SaaS 기능
+* API 인증
+* Deduplication (향후 추가)
 
 ---
 
-## Philosophy
+## 🧭 Roadmap
 
-이 시스템은 완벽한 콘텐츠를 만들지 않는다.
+다음 단계:
 
-> **대신, 나쁜 콘텐츠를 걸러낸다**
-
-그리고 그것이 더 중요하다.
-
----
-
-## Status
-
-🚧 MVP in progress
+* Multi-generation (N개 생성)
+* Ranking / Selection
+* Feedback loop (성과 기반 최적화)
 
 ---
 
-## Future
+## 📌 Final Statement
 
-* SaaS 확장
-* Multi-project
-* 자동 학습
-* 퍼포먼스 기반 최적화
+> Content OS의 목적은 단 하나다
 
----
-
-## Final Thought
-
-> 콘텐츠는 “작성”이 아니라
-> “운영”이다
+**“콘텐츠가 멈추지 않게 만드는 것”**
