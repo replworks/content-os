@@ -115,13 +115,14 @@ Generate → Validate → Output
     "body_markdown": "..."
   },
   "meta": {
-    "quality_score": 0.82,
+    "quality_score": 85,
     "dimensions": {
-      "readability": 0.9,
-      "relevance": 0.8,
-      "tone_match": 0.85,
-      "originality": 0.75
-    }
+      "readability": 90,
+      "relevance": 80,
+      "tone_match": 85,
+      "originality": 75
+    },
+    "warnings": ["Some minor grammar issues."]
   }
 }
 ```
@@ -180,7 +181,7 @@ npm install
 ### 2. Run
 
 ```bash
-node cli/generate-blog.ts
+npx ts-node cli/generate-blog.ts
 ```
 
 ---

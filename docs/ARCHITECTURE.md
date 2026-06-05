@@ -317,7 +317,14 @@ MVP 제외
   "type": "blog",
   "data": {},
   "meta": {
-    "quality_score": 0.82
+    "quality_score": 85,
+    "dimensions": {
+      "readability": 90,
+      "relevance": 80,
+      "tone_match": 85,
+      "originality": 75
+    },
+    "warnings": ["Some minor grammar issues."]
   }
 }
 ```
