@@ -39,6 +39,7 @@
 * 강타입 파이프라인 정리
 * Mock 기반 테스트 (LLM 없이 실행 가능)
 * API DI 분리 (Gemini 키 없이 테스트 가능)
+* Multi-generation pipeline 추가
 
 ---
 
@@ -144,6 +145,15 @@ LLM 없이 전체 테스트 가능
 
 ---
 
+## 4.5 Multi-generation Pipeline
+
+* [x] generateMany() 추가
+* [x] top K 검증 전략 적용
+* [x] evaluator 호출 수 제한
+* [x] 최종 후보 선택 테스트 추가
+
+---
+
 ### 예시
 
 ```ts
@@ -154,7 +164,7 @@ if (meta.quality_score < threshold) {
 
 ---
 
-## 4.5 API Layer
+## 4.6 API Layer
 
 * [x] traceId 응답 포함
 * [x] request-level logging
