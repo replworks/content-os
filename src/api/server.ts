@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import { generate } from '../generator/generate.ts';
 import { GeminiContentGenerator } from '../core/geminiAdapter.ts';
+import type { ContentType, Meta } from '../core/types.ts';
 
 const fastify = Fastify({
   logger: true,
@@ -32,15 +33,15 @@ const generator = new GeminiContentGenerator();
 
 // 타입 정의
 type GenerateRequest = {
-  type: string;
+  type: ContentType;
   templateId: string;
-  context: any;
+  context: Record<string, unknown>;
 };
 
 type GenerateResponse = {
-  type: string;
-  data: any;
-  meta: any;
+  type: ContentType;
+  data: Record<string, unknown>;
+  meta: Meta;
 };
 
 fastify.get('/health', async () => {
@@ -71,10 +72,14 @@ fastify.post<{
       generator, // 🔥 여기 중요
     });
 
-    // 2️⃣ Validator 연결 자리 (아직 없으니까 placeholder)
-    const meta = {
+    const meta: Meta = {
       quality_score: 0,
-      dimensions: {},
+      dimensions: {
+        readability: 0,
+        relevance: 0,
+        tone_match: 0,
+        originality: 0,
+      },
       warnings: [],
     };
 
@@ -84,20 +89,21 @@ fastify.post<{
       data,
       meta,
     };
-  } catch (err: any) {
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error(String(err));
     request.log.error(err);
 
     // 🔥 에러 타입 분리 추천
-    if (err.message.includes('JSON')) {
+    if (error.message.includes('JSON')) {
       return reply.status(500).send({
         error: 'JSON_PARSE_ERROR',
-        message: err.message,
+        message: error.message,
       });
     }
 
     return reply.status(500).send({
       error: 'GENERATION_FAILED',
-      message: err.message,
+      message: error.message,
     });
   }
 });

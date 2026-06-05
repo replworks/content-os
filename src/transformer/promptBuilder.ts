@@ -4,10 +4,10 @@ export function buildTransformPrompt({
   input,
   context,
 }: {
-  schema: any;
-  template: any;
-  input: any;
-  context: any;
+  schema: unknown;
+  template: unknown;
+  input?: unknown;
+  context: Record<string, unknown> | unknown;
 }) {
   return `
 You are a content transformer.

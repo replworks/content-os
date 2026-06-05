@@ -25,7 +25,7 @@
 
 ## Current Status
 
-현재 시스템은 이미 **MVP 수준을 초과**했다.
+현재 시스템은 MVP를 넘어 안정화 단계에 들어갔다.
 
 구현 완료:
 
@@ -36,6 +36,7 @@
 * AppError (표준 에러 구조)
 * Structured logging + traceId
 * Hard Filter (TS 기반 1차 필터)
+* 강타입 파이프라인 정리
 * Mock 기반 테스트 (LLM 없이 실행 가능)
 
 ---
@@ -108,10 +109,10 @@ LLM 없이 전체 테스트 가능
 
 ### 4.2 Docs 정합성
 
-* [ ] ARCHITECTURE.md ↔ 코드 일치 검증
-* [ ] SCHEMAS.md ↔ 실제 schema 검증
-* [ ] CONTEXT.md ↔ 실제 context 구조 확인
-* [ ] RULES.md ↔ Hard Filter 반영 여부 확인
+* [x] ARCHITECTURE.md ↔ 코드 일치 검증
+* [x] SCHEMAS.md ↔ 실제 schema 검증
+* [x] CONTEXT.md ↔ 실제 context 구조 확인
+* [x] RULES.md ↔ Hard Filter 반영 여부 확인
 
 ---
 
@@ -119,7 +120,7 @@ LLM 없이 전체 테스트 가능
 
 * [ ] 불필요한 console.log 제거
 * [ ] 에러 메시지 통일
-* [ ] 타입 정리 (any 최소화)
+* [x] 타입 정리 (any 최소화)
 
 ---
 
@@ -141,8 +142,8 @@ LLM 없이 전체 테스트 가능
 * [x] SNS 변환 가능
 * [x] outputs 저장
 * [x] 테스트 통과
-* [ ] 에러 발생 시 안정적 복구
-* [ ] 로그 기반 디버깅 가능
+* [x] 에러 발생 시 안정적 복구
+* [x] 로그 기반 디버깅 가능
 
 ---
 

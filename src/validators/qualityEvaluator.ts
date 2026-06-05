@@ -1,13 +1,14 @@
 import type { ContentEvaluator } from '../interfaces/llm.interface.ts';
 import { AppError, ERROR_CODES } from '../core/errors.ts';
+import type { Meta } from '../core/types.ts';
 
 export async function evaluateQuality({
   data,
   evaluator,
 }: {
-  data: any;
+  data: unknown;
   evaluator: ContentEvaluator;
-}) {
+}): Promise<Meta> {
   if (!evaluator) {
     throw new AppError(ERROR_CODES.LLM_ERROR, 'QUALITY_LLM_REQUIRED');
   }
@@ -34,5 +35,5 @@ ${JSON.stringify(data)}
 
   const text = await evaluator.evaluate(prompt);
 
-  return JSON.parse(text);
+  return JSON.parse(text) as Meta;
 }

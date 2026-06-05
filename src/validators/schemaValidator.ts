@@ -5,8 +5,8 @@ const ajv = new Ajv({
   strict: true,
 });
 
-export function validateSchema(schema: any, data: any) {
-  const validate = ajv.compile(schema);
+export function validateSchema(schema: unknown, data: unknown) {
+  const validate = ajv.compile(schema as object);
 
   const valid = validate(data);
 

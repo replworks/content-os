@@ -6,7 +6,7 @@ const FORBIDDEN_PATTERNS = [
   '1234',
 ];
 
-function collectStrings(value: any, seen = new Set<any>()): string[] {
+function collectStrings(value: unknown, seen = new Set<unknown>()): string[] {
   if (value == null) return [];
   if (typeof value === 'string') return [value];
   if (typeof value !== 'object') return [];
@@ -21,7 +21,7 @@ function collectStrings(value: any, seen = new Set<any>()): string[] {
   return Object.values(value).flatMap((item) => collectStrings(item, seen));
 }
 
-export function hardFilter(data: any): {
+export function hardFilter(data: unknown): {
   valid: boolean;
   reason?: string;
 } {

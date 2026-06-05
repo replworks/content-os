@@ -1,4 +1,4 @@
-type LogMeta = Record<string, any> | undefined;
+type LogMeta = Record<string, unknown> | undefined;
 
 function log(
   level: 'info' | 'warn' | 'error',
@@ -24,14 +24,14 @@ function log(
   console.error(payload);
 }
 
-export function logInfo(message: string, meta?: any) {
+export function logInfo(message: string, meta?: LogMeta) {
   log('info', message, meta);
 }
 
-export function logWarn(message: string, meta?: any) {
+export function logWarn(message: string, meta?: LogMeta) {
   log('warn', message, meta);
 }
 
-export function logError(message: string, meta?: any) {
+export function logError(message: string, meta?: LogMeta) {
   log('error', message, meta);
 }
