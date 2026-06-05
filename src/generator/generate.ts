@@ -1,8 +1,8 @@
 import { loadSchema } from '../core/loadSchema.ts';
 import { loadTemplate } from '../core/loadTemplate.ts';
 import { buildPrompt } from './promptBuilder.ts';
-import { parseJSON } from '../utils/parseJSON.ts';
 import type { ContentGenerator } from '../interfaces/llm.interface.ts';
+import { runLLMTask } from '../core/runLLMTask.ts';
 
 export async function generate({
   type,
@@ -22,15 +22,11 @@ export async function generate({
   const schema = loadSchema(type);
   const template = loadTemplate(type, templateId);
 
-  const prompt = buildPrompt({
+  return runLLMTask({
     schema,
     template,
     context,
+    generator,
+    promptBuilder: buildPrompt,
   });
-
-  const text = await generator.generate(prompt);
-
-  const data = parseJSON(text);
-
-  return data;
 }

@@ -10,7 +10,7 @@ export async function validate({
 }: {
   type: string;
   data: any;
-  evaluator: ContentEvaluator; // ✅ 필수로 변경
+  evaluator: ContentEvaluator;
 }) {
   const schema = loadSchema(type);
 
@@ -18,7 +18,10 @@ export async function validate({
   const schemaResult = validateSchema(schema, data);
 
   if (!schemaResult.valid) {
-    throw new Error('VALIDATION_ERROR');
+    return {
+      valid: false,
+      errors: schemaResult.errors,
+    };
   }
 
   // 2. Quality evaluation
@@ -28,6 +31,7 @@ export async function validate({
   });
 
   return {
+    valid: true,
     meta: quality,
   };
 }

@@ -1,6 +1,6 @@
 import { generate } from '../generator/generate.ts';
 import { validate } from '../validators/validate.ts';
-import {
+import type {
   ContentGenerator,
   ContentEvaluator,
 } from '../interfaces/llm.interface.ts';

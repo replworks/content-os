@@ -1,7 +1,8 @@
-import { model } from '../core/gemini.ts';
 import { loadTemplate } from '../core/loadTemplate.ts';
 import { buildTransformPrompt } from './promptBuilder.ts';
-import { parseJSON } from '../utils/parseJSON.ts';
+import type { ContentGenerator } from '../interfaces/llm.interface';
+import { loadSchema } from '../core/loadSchema.ts';
+import { runLLMTask } from '../core/runLLMTask.ts';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 export async function transform({
@@ -9,23 +10,27 @@ export async function transform({
   to,
   templateId,
   input,
+  context,
+  generator,
 }: {
   from: string;
   to: string;
   templateId: string;
   input: any;
+  context: any;
+  generator: ContentGenerator;
 }) {
+  const schema = loadSchema(to);
   const template = loadTemplate(to, templateId);
 
-  const prompt = buildTransformPrompt({
+  return runLLMTask({
+    schema,
     template,
-    input,
+    context: {
+      source: input,
+      ...context,
+    },
+    generator,
+    promptBuilder: buildTransformPrompt,
   });
-
-  const result = await model.generateContent(prompt);
-  const text = result.response.text();
-
-  const parsed = parseJSON(text);
-
-  return parsed;
 }
