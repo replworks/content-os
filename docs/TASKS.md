@@ -18,6 +18,7 @@
 * Blog 콘텐츠 생성
 * Blog → SNS 변환
 * Validator (schema + quality)
+* TopicGenerator 인터페이스
 * JSON 파일 출력
 * 테스트 포함
 * **LLM 인터페이스 기반 (DI 구조)**
@@ -31,6 +32,7 @@
 * Schema / template 로딩
 * Generator / Validator / Transformer
 * runGenerate / runTransform
+* TopicGenerator 인터페이스 정의
 * CLI 실행 + outputs 저장
 * Mock 기반 테스트
 
@@ -115,9 +117,11 @@ LLM 추상화 기반 콘텐츠 생성
 ### 작업
 
 * [x] ContentGenerator 인터페이스 정의
+* [x] TopicGenerator 인터페이스 정의
 * [x] generate() 구현 (generator 주입)
 * [x] prompt builder 구현
 * [x] JSON only output 강제
+* [x] envelope/data/meta 구조 유지
 
 ---
 
