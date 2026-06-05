@@ -52,7 +52,7 @@ describe('evaluateQuality', () => {
     const prompt = mockEvaluator.evaluate.mock.calls[0][0];
 
     expect(prompt).toContain('Evaluate the quality of this content');
-    expect(prompt).toContain('"title": "강아지"');
+    expect(prompt).toContain('"title":"강아지"');
   });
 
   it('should throw error when evaluator is missing', async () => {

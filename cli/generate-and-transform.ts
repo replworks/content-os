@@ -1,9 +1,9 @@
-import { runGenerate } from '../src/core/runGenerate';
-import { runTransform } from '../src/core/runTransform';
+import { runGenerate } from '../src/core/runGenerate.ts';
+import { runTransform } from '../src/core/runTransform.ts';
 import {
   GeminiContentGenerator,
   GeminiContentEvaluator,
-} from '../src/core/geminiAdapter';
+} from '../src/core/geminiAdapter.ts';
 import fs from 'fs';
 import path from 'path';
 
@@ -29,6 +29,7 @@ async function main() {
     to: 'sns',
     templateId: 'sns-transform',
     input: blog.data,
+    context: {},
     generator,
     evaluator,
   });

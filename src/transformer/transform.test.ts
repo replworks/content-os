@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { runGenerate } from '../core/runGenerate';
-import { runTransform } from '../core/runTransform';
-import { MockContentGenerator } from '../../tests/mocks/mockContentGenerator';
-import { MockContentEvaluator } from '../../tests/mocks/mockContentEvaluator';
+import { runGenerate } from '../core/runGenerate.ts';
+import { runTransform } from '../core/runTransform.ts';
+import { MockContentGenerator } from '../../tests/mocks/mockContentGenerator.ts';
+import { MockContentEvaluator } from '../../tests/mocks/mockContentEvaluator.ts';
 
 describe('Transform', () => {
   it('should convert blog to sns', async () => {

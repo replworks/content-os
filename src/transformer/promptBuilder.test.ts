@@ -14,8 +14,10 @@ describe('buildTransformPrompt', () => {
     };
 
     const prompt = buildTransformPrompt({
+      schema: { type: 'object' },
       template,
       input,
+      context: {},
     });
 
     // 🔥 기본 구조
@@ -36,8 +38,10 @@ describe('buildTransformPrompt', () => {
 
   it('should enforce strict JSON output rules', () => {
     const prompt = buildTransformPrompt({
+      schema: { type: 'object' },
       template: {},
       input: {},
+      context: {},
     });
 
     expect(prompt).toContain('Output ONLY valid JSON');
@@ -54,8 +58,10 @@ describe('buildTransformPrompt', () => {
     };
 
     const prompt = buildTransformPrompt({
+      schema: { type: 'object' },
       template: {},
       input,
+      context: {},
     });
 
     expect(prompt).toContain('"tags": [');
@@ -69,8 +75,10 @@ describe('buildTransformPrompt', () => {
     };
 
     const prompt = buildTransformPrompt({
+      schema: { type: 'object' },
       template: {},
       input,
+      context: {},
     });
 
     expect(prompt).toContain('# 제목');

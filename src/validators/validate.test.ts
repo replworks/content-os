@@ -1,8 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { validate } from './validate.ts';
 import * as loadSchemaModule from '../core/loadSchema.ts';
-import * as schemaValidatorModule from './schemaValidator';
-import * as qualityEvaluatorModule from './qualityEvaluator';
+import * as schemaValidatorModule from './schemaValidator.ts';
+import * as qualityEvaluatorModule from './qualityEvaluator.ts';
 
 describe('validate', () => {
   const mockEvaluator = {
@@ -16,11 +16,23 @@ describe('validate', () => {
   it('should return invalid when schema validation fails', async () => {
     // 🔥 mock schema
     vi.spyOn(loadSchemaModule, 'loadSchema').mockReturnValue({});
+    const qualitySpy = vi
+      .spyOn(qualityEvaluatorModule, 'evaluateQuality')
+      .mockResolvedValue({
+        quality_score: 0.8,
+        dimensions: {
+          readability: 0.8,
+          relevance: 0.9,
+          tone_match: 0.7,
+          originality: 0.8,
+        },
+        warnings: [],
+      });
 
     // 🔥 schema fail
     vi.spyOn(schemaValidatorModule, 'validateSchema').mockReturnValue({
       valid: false,
-      errors: ['title is required'],
+      errors: [{ message: 'title is required' }] as any,
     });
 
     const result = await validate({
@@ -34,7 +46,7 @@ describe('validate', () => {
     expect(result.errors?.length).toBeGreaterThan(0);
 
     // ❗ quality는 호출되면 안됨
-    expect(qualityEvaluatorModule.evaluateQuality).not.toHaveBeenCalled();
+    expect(qualitySpy).not.toHaveBeenCalled();
   });
 
   it('should return valid with meta when schema passes', async () => {

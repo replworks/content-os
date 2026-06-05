@@ -1,7 +1,7 @@
 import { loadSchema } from '../core/loadSchema.ts';
 import { validateSchema } from './schemaValidator.ts';
 import { evaluateQuality } from './qualityEvaluator.ts';
-import { ContentEvaluator } from '../interfaces/llm.interface.ts';
+import type { ContentEvaluator } from '../interfaces/llm.interface.ts';
 
 export async function validate({
   type,

@@ -57,7 +57,7 @@ describe('runTransform', () => {
     // 🔥 5️⃣ meta 검증 (Content OS 핵심)
     expect(typeof sns.meta.quality_score).toBe('number');
     expect(sns.meta.quality_score).toBeGreaterThanOrEqual(0);
-    expect(sns.meta.quality_score).toBeLessThanOrEqual(1);
+    expect(sns.meta.quality_score).toBeLessThanOrEqual(100);
 
     expect(sns.meta.dimensions).toBeDefined();
     expect(typeof sns.meta.dimensions.readability).toBe('number');

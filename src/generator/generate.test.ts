@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { generate } from './generate';
-import { MockContentGenerator } from '../../tests/mocks/mockContentGenerator';
+import { generate } from './generate.ts';
+import { MockContentGenerator } from '../../tests/mocks/mockContentGenerator.ts';
 
 describe('Generator', () => {
   it('should generate blog json', async () => {

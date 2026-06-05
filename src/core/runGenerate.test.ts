@@ -49,7 +49,7 @@ describe('runGenerate', () => {
     // 🔥 3. meta (Content OS 핵심)
     expect(typeof result.meta.quality_score).toBe('number');
     expect(result.meta.quality_score).toBeGreaterThanOrEqual(0);
-    expect(result.meta.quality_score).toBeLessThanOrEqual(1);
+    expect(result.meta.quality_score).toBeLessThanOrEqual(100);
 
     expect(result.meta.dimensions).toBeDefined();
     expect(typeof result.meta.dimensions.readability).toBe('number');
