@@ -1,13 +1,15 @@
 import { generate } from './generate.ts';
 import { hardFilter } from '../validators/hardFilter.ts';
+import { similarity, repetitionPenalty } from './selector.ts';
 import type { ContentGenerator } from '../interfaces/llm.interface.ts';
 import type { ContentDataMap, ContentType } from '../core/types.ts';
 
 const DEFAULT_GENERATION_COUNT = 5;
 
-type Candidate<T> = {
+export type Candidate<T> = {
   data: T;
   cheapScore: number;
+  initialScore: number;
 };
 
 function cheapScore(value: unknown) {
@@ -27,6 +29,27 @@ function cheapScore(value: unknown) {
   }
 
   return score;
+}
+
+function computeInitialScore<T>(
+  candidate: Candidate<T>,
+  peers: Candidate<T>[]
+) {
+  if (peers.length <= 1) {
+    return candidate.cheapScore;
+  }
+
+  const similarities = peers
+    .filter((peer) => peer !== candidate)
+    .map((peer) => similarity(candidate.data, peer.data));
+
+  const avgSimilarity =
+    similarities.reduce((sum, value) => sum + value, 0) / similarities.length;
+
+  const diversityBonus = (1 - avgSimilarity) * 10;
+  const penalty = repetitionPenalty(candidate.data) * 10;
+
+  return candidate.cheapScore + diversityBonus - penalty;
 }
 
 export async function generateMany<TType extends ContentType>({
@@ -63,12 +86,20 @@ export async function generateMany<TType extends ContentType>({
       return {
         data,
         cheapScore: cheapScore(data),
+        initialScore: 0,
       } as Candidate<ContentDataMap[TType]>;
     })
   );
 
-  return rawCandidates.filter(
+  const candidates = rawCandidates.filter(
     (candidate): candidate is Candidate<ContentDataMap[TType]> =>
       candidate !== null
   );
+
+  const scoredCandidates = candidates.map((candidate) => ({
+    ...candidate,
+    initialScore: computeInitialScore(candidate, candidates),
+  }));
+
+  return scoredCandidates.sort((a, b) => b.initialScore - a.initialScore);
 }
