@@ -6,7 +6,7 @@
 
 목표:
 
-> **안정적인 Content Engine을 완성하고, 이후 Content OS(Runtime)로 확장한다**
+> **7~9일 내 실제 동작하는 Content OS MVP 완성**
 
 ---
 
@@ -19,250 +19,145 @@
 * TopicGenerator 인터페이스
 * JSON 파일 출력
 * 테스트 포함
-* **LLM 인터페이스 기반 (DI 구조)**
+* LLM 인터페이스 기반 (DI 구조)
 
 ---
 
 ## Current Status
 
-현재 Core Engine은 완성 상태:
+현재 시스템은 이미 **MVP 수준을 초과**했다.
 
-* Schema / template 로딩
+구현 완료:
+
+* Schema / Template 로딩
 * Generator / Transformer / Validator
 * runGenerate / runTransform
-* TopicGenerator 인터페이스 정의
-* CLI 실행 + outputs 저장
-* Mock 기반 테스트
-
-### Reliability & Safety (완료)
-
 * JSON parse retry
-* AppError 기반 에러 표준화
+* AppError (표준 에러 구조)
 * Structured logging + traceId
 * Hard Filter (TS 기반 1차 필터)
-* 테스트 커버리지 확보
+* Mock 기반 테스트 (LLM 없이 실행 가능)
 
 ---
 
-# Phase 1 — Content Engine (완료 단계)
+## Phase 1 — Core System (완료)
 
-## Day 1 ~ Day 8
+### 포함
 
-모든 핵심 기능 완료됨.
+* Generator
+* Validator
+* Transformer
+* Pipeline (runGenerate / runTransform)
+
+✅ 완료
 
 ---
 
-## Day 9 — Stabilization (마무리 단계)
+## Phase 2 — Reliability Layer (완료)
 
 ### 목표
 
-운영 가능한 안정성 확보
+LLM 불안정성 대응 + 운영 안정성 확보
 
 ---
 
 ### 작업
 
-* [ ] CLI UX 개선 (에러 출력 / 결과 포맷 정리)
-* [ ] 로그 포맷 정리 (불필요 로그 제거)
-* [ ] traceId propagation 점검
-* [ ] 문서 정합성 체크 (ARCHITECTURE / CONTEXT / RULES)
-* [ ] 에러 메시지 통일성 점검
+* [x] JSON parse retry
+* [x] AppError 표준화
+* [x] Structured logging (traceId)
+* [x] Hard Filter (TS-only validation)
+* [x] Error / Retry 테스트
 
 ---
 
-### 완료 조건
-
-* CLI 실행 시 디버깅 가능
-* 로그만으로 문제 추적 가능
-* 문서 ↔ 코드 불일치 없음
-
----
-
-# 🚀 Phase 2 — Content OS Core (다음 단계)
-
-> 이제부터가 IDEAS.md 구현 영역
-
----
-
-## Day 10 — Topic Generation
+## Phase 3 — Testing (완료)
 
 ### 목표
 
-콘텐츠 “주제 생성 시스템” 구축
+LLM 없이 전체 테스트 가능
 
 ---
 
 ### 작업
 
-* [ ] TopicGenerator 구현체 (Gemini 기반)
-* [ ] topic schema 정의
-* [ ] generateTopic() 함수 구현
-* [ ] topic 테스트 작성
+* [x] MockContentGenerator
+* [x] MockContentEvaluator
+* [x] Generator 테스트
+* [x] Transformer 테스트
+* [x] Validator 테스트
+* [x] Pipeline 테스트
 
 ---
 
-### 결과
-
-```ts
-topics = await generateTopics({ context })
-```
-
----
-
-## Day 11 — Multi Generation
+## Phase 4 — Stabilization (진짜 마지막 단계)
 
 ### 목표
 
-한 번에 여러 콘텐츠 생성
+“운영 가능한 상태”로 마무리
 
 ---
 
-### 작업
+### 4.1 CLI 안정화
 
-* [ ] generateMany() 구현
-* [ ] 병렬 실행 처리
-* [ ] traceId 그룹 관리
-* [ ] 실패 개별 처리
-
----
-
-### 결과
-
-```ts
-candidates = await generateMany({ topic, count: 5 })
-```
+* [ ] CLI 에러 출력 개선
+* [ ] traceId 출력
+* [ ] 실패 시 exit code 명확화
 
 ---
 
-## Day 12 — Candidate Selection
+### 4.2 Docs 정합성
 
-### 목표
-
-여러 결과 중 선택
-
----
-
-### 작업
-
-* [ ] selection 전략 구현
-
-  * 최고 점수 선택
-  * threshold 필터
-* [ ] reject 처리
-* [ ] selection 테스트
+* [ ] ARCHITECTURE.md ↔ 코드 일치 검증
+* [ ] SCHEMAS.md ↔ 실제 schema 검증
+* [ ] CONTEXT.md ↔ 실제 context 구조 확인
+* [ ] RULES.md ↔ Hard Filter 반영 여부 확인
 
 ---
 
-### 결과
+### 4.3 Code Cleanup
 
-```ts
-best = selectBest(candidates)
-```
-
----
-
-## Day 13 — Content Pipeline
-
-### 목표
-
-전체 흐름 연결
+* [ ] 불필요한 console.log 제거
+* [ ] 에러 메시지 통일
+* [ ] 타입 정리 (any 최소화)
 
 ---
 
-### 작업
+### 4.4 Optional (시간 남으면)
 
-* [ ] pipeline 함수 구현
-
-```ts
-topic → generateMany → filter → validate → select
-```
+* [ ] API layer traceId 연결
+* [ ] request-level logging
+* [ ] config 기반 threshold (quality_score)
 
 ---
 
-### 완료 조건
+## Definition of Done
 
-* 한 번의 실행으로 최종 콘텐츠 생성
+다음이 모두 가능해야 한다:
 
----
-
-## Day 14 — Output Strategy
-
-### 목표
-
-운영 가능한 출력 구조
-
----
-
-### 작업
-
-* [ ] outputs 구조 개선
-* [ ] topic / candidates / final 분리 저장
-* [ ] traceId 기반 파일 관리
+* [x] CLI로 blog 생성
+* [x] JSON schema 통과
+* [x] quality_score 포함
+* [x] SNS 변환 가능
+* [x] outputs 저장
+* [x] 테스트 통과
+* [ ] 에러 발생 시 안정적 복구
+* [ ] 로그 기반 디버깅 가능
 
 ---
 
----
+## Not Included (명확히 제외)
 
-# Phase 3 — Runtime (Laravel 영역)
-
-> TS 영역 아님 (설계만)
-
----
-
-## 목표
-
-지속적인 콘텐츠 운영
-
----
-
-### 구성
-
-* Queue
-* Batch
-* Scheduler (cron)
-* API 호출 (TS)
-
----
-
-### 역할 분리
-
-| 역할             | 담당      |
-| -------------- | ------- |
-| Content Engine | TS      |
-| Orchestration  | Laravel |
-
----
-
----
-
-## Definition of Done (Phase 1)
-
-* CLI 실행 가능
-* JSON schema 통과
-* meta 포함
-* SNS 변환 가능
-* 테스트 통과
-* 에러/로그/필터 안정화 완료
-
----
-
-## Definition of Done (Phase 2)
-
-* topic 생성 가능
-* multi generation 가능
-* 자동 선택 가능
-* pipeline 완성
+* Laravel (Scheduler / Queue)
+* API 인증 / 사용자 관리
+* DB
+* Deduplication (Embedding)
+* SaaS 기능
 
 ---
 
 ## Final Statement
 
-이 시스템은 두 단계로 완성된다:
+이 시스템은 단순한 LLM wrapper가 아니다.
 
-> 1. **절대 깨지지 않는 Content Engine (TS)**
-> 2. **멈추지 않는 Content OS (Laravel Runtime)**
-
-현재 상태:
-
-> ✅ Engine 완성 직전
-> 🔜 OS 구축 단계 진입
+> **“LLM을 안정적인 콘텐츠 생산 시스템으로 만드는 엔진”이다**
