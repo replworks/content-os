@@ -1,6 +1,7 @@
 import { parseJSON } from '../utils/parseJSON.ts';
 import type { ContentGenerator } from '../interfaces/llm.interface.ts';
 import { AppError, ERROR_CODES } from './errors.ts';
+import { logError, logInfo, logWarn } from './logger.ts';
 
 export async function runLLMTask({
   schema,
@@ -9,6 +10,7 @@ export async function runLLMTask({
   input,
   generator,
   promptBuilder,
+  traceId,
 }: {
   schema: any;
   template: any;
@@ -16,7 +18,10 @@ export async function runLLMTask({
   input?: any;
   generator: ContentGenerator;
   promptBuilder: (args: any) => string;
+  traceId?: string;
 }) {
+  logInfo('runLLMTask:request', { traceId });
+
   const prompt = promptBuilder({
     schema,
     template,
@@ -32,6 +37,7 @@ export async function runLLMTask({
     try {
       text = await generator.generate(prompt);
     } catch {
+      logError('runLLMTask:failed', { traceId });
       throw new AppError(ERROR_CODES.LLM_ERROR);
     }
 
@@ -39,14 +45,14 @@ export async function runLLMTask({
       return parseJSON(text);
     } catch {
       if (attempt === maxAttempts) {
+        logError('runLLMTask:failed', { traceId });
         throw new AppError(ERROR_CODES.JSON_PARSE_ERROR);
       }
 
-      console.warn(
-        `[runLLMTask] JSON parse failed, retrying... (${attempt}/${maxAttempts})`
-      );
+      logWarn('runLLMTask:retry', { traceId, attempt });
     }
   }
 
+  logError('runLLMTask:failed', { traceId });
   throw new AppError(ERROR_CODES.JSON_PARSE_ERROR);
 }

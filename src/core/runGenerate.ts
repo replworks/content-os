@@ -5,6 +5,7 @@ import type {
   ContentEvaluator,
 } from '../interfaces/llm.interface.ts';
 import { AppError, ERROR_CODES } from './errors.ts';
+import { logInfo } from './logger.ts';
 
 export async function runGenerate({
   type,
@@ -19,17 +20,22 @@ export async function runGenerate({
   generator: ContentGenerator;
   evaluator: ContentEvaluator;
 }) {
+  const traceId = Math.random().toString(36).slice(2);
+  logInfo('runGenerate:start', { traceId, type, templateId });
+
   const data = await generate({
     type,
     templateId,
     context,
     generator,
+    traceId,
   });
 
   const result = await validate({
     type,
     data,
     evaluator,
+    traceId,
   });
 
   if (!result.valid) {
