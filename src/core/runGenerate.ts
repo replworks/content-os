@@ -1,9 +1,9 @@
-import { generate } from '../generator/generate';
-import { validate } from '../validators/validate';
+import { generate } from '../generator/generate.ts';
+import { validate } from '../validators/validate.ts';
 import {
   ContentGenerator,
   ContentEvaluator,
-} from '../interfaces/llm.interface';
+} from '../interfaces/llm.interface.ts';
 
 export async function runGenerate({
   type,

@@ -1,8 +1,8 @@
-import { loadSchema } from '../core/loadSchema';
-import { loadTemplate } from '../core/loadTemplate';
-import { buildPrompt } from './promptBuilder';
-import { parseJSON } from '../utils/parseJSON';
-import { ContentGenerator } from '../interfaces/llm.interface';
+import { loadSchema } from '../core/loadSchema.ts';
+import { loadTemplate } from '../core/loadTemplate.ts';
+import { buildPrompt } from './promptBuilder.ts';
+import { parseJSON } from '../utils/parseJSON.ts';
+import type { ContentGenerator } from '../interfaces/llm.interface.ts';
 
 export async function generate({
   type,
