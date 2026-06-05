@@ -184,6 +184,63 @@ describe('runGenerateMany', () => {
     expect((result as any).candidates[0].data.title).toBe('Candidate B');
   });
 
+  it('should preserve external scores on validated candidate objects in candidates mode', async () => {
+    vi.mocked(generateMany).mockResolvedValue([
+      {
+        data: {
+          title: 'Candidate A',
+          summary: 'Candidate A summary that is definitely long enough.',
+          body_markdown: 'A'.repeat(320),
+        },
+        cheapScore: 10,
+        initialScore: 10,
+        scores: {
+          custom: 92,
+          ctr_weighted: 88,
+        },
+      },
+    ] as never);
+
+    vi.mocked(validate).mockResolvedValue({
+      valid: true,
+      meta: {
+        quality_score: 90,
+        dimensions: {
+          readability: 90,
+          relevance: 90,
+          tone_match: 90,
+          originality: 90,
+        },
+        warnings: [],
+      },
+    } as never);
+
+    const result = await runGenerateMany({
+      type: 'blog',
+      templateId: 'seo-v1',
+      context: {
+        topic: '강아지가 혀를 내미는 이유',
+      },
+      generator: {
+        generate: vi.fn(),
+      },
+      evaluator: {
+        evaluate: vi.fn(),
+      },
+      traceId: 'trace-scores',
+      count: 5,
+      topK: 1,
+      mode: 'candidates',
+    });
+
+    expect((result as any).candidates).toHaveLength(1);
+    expect((result as any).candidates[0].scores).toEqual({
+      custom: 92,
+      ctr_weighted: 88,
+    });
+    expect((result as any).defaultWinnerIndex).toBe(0);
+  });
+
   it('should allow selectionFn to override the default winner', async () => {
     vi.mocked(generateMany).mockResolvedValue([
       {

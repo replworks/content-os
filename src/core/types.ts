@@ -38,6 +38,15 @@ export type Meta = {
   warnings: string[];
 };
 
+export type Candidate<T> = {
+  data: T;
+  meta: Meta;
+  scores?: {
+    custom?: number;
+    [key: string]: number | undefined;
+  };
+};
+
 export type Envelope<T> = {
   type: ContentType;
   data: T;
@@ -46,10 +55,7 @@ export type Envelope<T> = {
 
 export type CandidateSelectionResult<T> = {
   type: ContentType;
-  candidates: Array<{
-    data: T;
-    meta: Meta;
-  }>;
+  candidates: Array<Candidate<T>>;
   defaultWinnerIndex: number;
 };
 

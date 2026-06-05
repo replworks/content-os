@@ -12,16 +12,14 @@ import type {
   ContentDataMap,
   ContentType,
   Envelope,
+  Candidate,
   CandidateSelectionResult,
 } from './types.ts';
 
 export type RunGenerateManyMode = 'single' | 'candidates';
 
 export type SelectionFn<TType extends ContentType> = (
-  candidates: Array<{
-    data: ContentDataMap[TType];
-    meta: Envelope<ContentDataMap[TType]>['meta'];
-  }>
+  candidates: ReadonlyArray<Candidate<ContentDataMap[TType]>>
 ) => number;
 
 export type RunGenerateManyInput<TType extends ContentType> = {
@@ -39,10 +37,7 @@ export type RunGenerateManyInput<TType extends ContentType> = {
 };
 
 function getDefaultWinnerIndex<TType extends ContentType>(
-  candidates: Array<{
-    data: ContentDataMap[TType];
-    meta: Envelope<ContentDataMap[TType]>['meta'];
-  }>
+  candidates: ReadonlyArray<Candidate<ContentDataMap[TType]>>
 ): number {
   return candidates.reduce((bestIndex, candidate, index) => {
     const currentQuality = candidate.meta.quality_score;
@@ -118,7 +113,11 @@ export async function runGenerateMany<TType extends ContentType>({
 
     const rankedCandidates = candidates
       .sort((a, b) => b.initialScore - a.initialScore)
-      .slice(0, finalTopK);
+      .slice(0, finalTopK) as Array<{
+      data: ContentDataMap[TType];
+      initialScore: number;
+      scores?: Candidate<ContentDataMap[TType]>['scores'];
+    }>;
 
     if (rankedCandidates.length === 0) {
       throw new AppError(
@@ -149,20 +148,14 @@ export async function runGenerateMany<TType extends ContentType>({
         return {
           data: candidate.data,
           meta: result.meta,
+          ...(candidate.scores ? { scores: candidate.scores } : {}),
         };
       })
-    )) as Array<{
-      data: ContentDataMap[TType];
-      meta: Envelope<ContentDataMap[TType]>['meta'];
-    } | null>;
+    )) as Array<Candidate<ContentDataMap[TType]> | null>;
 
     const filtered = validated.filter(
-      (
-        candidate
-      ): candidate is {
-        data: ContentDataMap[TType];
-        meta: Envelope<ContentDataMap[TType]>['meta'];
-      } => candidate !== null
+      (candidate): candidate is Candidate<ContentDataMap[TType]> =>
+        candidate !== null
     );
 
     if (filtered.length === 0) {

@@ -153,13 +153,15 @@ context = mergeContext(base, external)
 
 * [x] optional selection hook
 * [x] candidates mode output 구조
+* [x] candidate score metadata passthrough
+* [x] external scoring injection supported
 
 ---
 
 ### (Optional / External Usage)
 
-* [ ] custom scoring hook (Laravel에서 override)
-* [ ] quality 외 추가 점수 반영 구조 (CTR, engagement 등)
+* [x] custom scoring hook (Laravel에서 override)
+* [x] quality 외 추가 점수 반영 구조 (CTR, engagement 등)
 
 ---
 
