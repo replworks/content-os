@@ -1,7 +1,7 @@
 import { generateMany } from '../generator/generateMany.ts';
 import { selectBest } from '../generator/selector.ts';
 import { validate } from '../validators/validate.ts';
-import { getQualityThreshold } from '../config/quality.ts';
+import { getQualityThreshold, getGenerationConfig } from '../config/index.ts';
 import { mergeContext } from '../utils/context.ts';
 import type {
   ContentGenerator,
@@ -10,8 +10,6 @@ import type {
 import { AppError, ERROR_CODES } from './errors.ts';
 import { logInfo } from './logger.ts';
 import type { ContentDataMap, ContentType, Envelope } from './types.ts';
-
-const DEFAULT_TOP_COUNT = 2;
 
 export async function runGenerateMany<TType extends ContentType>({
   type,
@@ -22,7 +20,7 @@ export async function runGenerateMany<TType extends ContentType>({
   traceId,
   count,
   externalContext,
-  topK = DEFAULT_TOP_COUNT,
+  topK,
 }: {
   type: TType;
   templateId: string;
@@ -35,11 +33,16 @@ export async function runGenerateMany<TType extends ContentType>({
   topK?: number;
 }): Promise<Envelope<ContentDataMap[TType]>> {
   const resolvedTraceId = traceId ?? Math.random().toString(36).slice(2);
+  const { defaultCount, defaultTopK } = getGenerationConfig();
+  const finalCount = count ?? defaultCount;
+  const finalTopK = topK ?? defaultTopK;
+
   logInfo('runGenerateMany:start', {
     traceId: resolvedTraceId,
     type,
     templateId,
-    topK,
+    count: finalCount,
+    topK: finalTopK,
   });
 
   try {
@@ -51,12 +54,12 @@ export async function runGenerateMany<TType extends ContentType>({
       context: mergedContext,
       generator,
       traceId: resolvedTraceId,
-      count,
+      count: finalCount,
     });
 
     const rankedCandidates = candidates
       .sort((a, b) => b.initialScore - a.initialScore)
-      .slice(0, topK);
+      .slice(0, finalTopK);
 
     if (rankedCandidates.length === 0) {
       throw new AppError(

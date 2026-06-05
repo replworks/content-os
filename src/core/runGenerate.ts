@@ -1,7 +1,7 @@
 import { generate } from '../generator/generate.ts';
 import { hardFilter } from '../validators/hardFilter.ts';
 import { validate } from '../validators/validate.ts';
-import { getQualityThreshold } from '../config/quality.ts';
+import { getQualityThreshold } from '../config/index.ts';
 import { mergeContext } from '../utils/context.ts';
 import type {
   ContentGenerator,

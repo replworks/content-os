@@ -157,6 +157,134 @@ export const QUALITY_THRESHOLD = {
 
 ---
 
+## ⚙️ Config System (Environment-based Settings)
+
+Content OS는 실행 파라미터를 코드에 하드코딩하지 않고
+**환경별 설정(config)** 으로 관리한다.
+
+---
+
+### 📁 Config 구조
+
+```bash
+src/config/
+├── base.ts
+├── dev.ts
+├── prod.ts
+└── index.ts
+```
+
+---
+
+### 🧩 설정 항목
+
+```ts
+export const config = {
+  qualityThreshold: {
+    blog: 70,
+    sns: 60,
+    default: 65,
+  },
+  generation: {
+    count: 5,
+    topK: 2,
+  },
+};
+```
+
+---
+
+### 🌍 환경별 설정
+
+환경에 따라 자동으로 config가 변경된다.
+
+```bash
+NODE_ENV=development
+NODE_ENV=production
+```
+
+#### dev
+
+```ts
+export const devConfig = {
+  generation: {
+    count: 2,
+    topK: 1,
+  },
+};
+```
+
+👉 빠른 테스트 / 저비용
+
+---
+
+#### prod
+
+```ts
+export const prodConfig = {
+  generation: {
+    count: 5,
+    topK: 2,
+  },
+};
+```
+
+👉 품질 최적화
+
+---
+
+### 🔌 실행 시 동작
+
+```ts
+import { config } from "../config";
+```
+
+```ts
+const threshold = config.qualityThreshold[type];
+const count = config.generation.count;
+const topK = config.generation.topK;
+```
+
+👉 모든 파이프라인에서 자동 적용됨
+
+---
+
+### 🧪 CLI에서 환경 지정
+
+```bash
+NODE_ENV=development npx ts-node src/cli.ts generate ...
+```
+
+```bash
+NODE_ENV=production npx ts-node src/cli.ts generateMany ...
+```
+
+---
+
+### 🎯 왜 중요한가?
+
+이 구조 덕분에:
+
+* 코드 수정 없이 운영 정책 변경 가능
+* 비용 / 품질 트레이드오프 조절 가능
+* 실험 (A/B 테스트) 가능
+* 운영 환경에 맞게 자동 최적화
+
+---
+
+### ❗ 설계 원칙
+
+* config는 **전역 단일 source of truth**
+* runtime 로직에서 **직접 숫자 사용 금지**
+* 모든 threshold / count / topK는 config 통해서만 접근
+
+---
+
+> Content OS는 "코드"가 아니라
+> **"설정으로 제어되는 엔진"이다**
+
+---
+
 ## 🧪 Testing
 
 LLM 없이 테스트 가능:
