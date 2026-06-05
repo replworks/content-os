@@ -121,8 +121,8 @@ LLM 없이 전체 테스트 가능
 
 ## 4.3 Code Cleanup
 
-* [ ] 불필요한 console.log 제거
-* [ ] 에러 메시지 통일 (AppError 중심)
+* [x] 불필요한 console.log 제거 (CLI 사용자 출력 제외)
+* [x] 에러 메시지 통일 (AppError 중심)
 * [x] 타입 정리 (any 최소화)
 
 ---
@@ -176,7 +176,7 @@ if (meta.quality_score < threshold) {
 * [x] 테스트 통과
 * [x] 에러 발생 시 안정적 복구
 * [x] 로그 기반 디버깅 가능
-* [ ] **low quality 콘텐츠 자동 차단 (threshold 적용)**
+* [x] **low quality 콘텐츠 자동 차단 (threshold 적용)**
 
 ---
 
