@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { runLLMTask } from './runLLMTask.ts';
+import { ERROR_CODES } from './errors.ts';
 
 describe('runLLMTask', () => {
   const mockSchema = { type: 'object' };
@@ -34,7 +35,7 @@ describe('runLLMTask', () => {
 
   it('should retry and succeed on the third attempt', async () => {
     const mockPromptBuilder = vi.fn().mockReturnValue('PROMPT');
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const mockGenerator = {
       generate: vi
         .fn()
@@ -58,23 +59,30 @@ describe('runLLMTask', () => {
     expect(mockGenerator.generate).toHaveBeenNthCalledWith(1, 'PROMPT');
     expect(mockGenerator.generate).toHaveBeenNthCalledWith(2, 'PROMPT');
     expect(mockGenerator.generate).toHaveBeenNthCalledWith(3, 'PROMPT');
-    expect(JSON.parse(warnSpy.mock.calls[0][0])).toMatchObject({
-      level: 'warn',
-      message: 'runLLMTask:retry',
-      traceId: 'trace-123',
-      attempt: 1,
-    });
-    expect(JSON.parse(warnSpy.mock.calls[1][0])).toMatchObject({
-      level: 'warn',
-      message: 'runLLMTask:retry',
-      traceId: 'trace-123',
-      attempt: 2,
-    });
+    expect(
+      errorSpy.mock.calls.some(
+        ([payload]) => JSON.parse(payload).message === 'parseJSON:failed'
+      )
+    ).toBe(true);
+    expect(
+      errorSpy.mock.calls.some(
+        ([payload]) =>
+          JSON.parse(payload).code === ERROR_CODES.JSON_PARSE_ERROR &&
+          JSON.parse(payload).attempt === 1
+      )
+    ).toBe(true);
+    expect(
+      errorSpy.mock.calls.some(
+        ([payload]) =>
+          JSON.parse(payload).code === ERROR_CODES.JSON_PARSE_ERROR &&
+          JSON.parse(payload).attempt === 2
+      )
+    ).toBe(true);
   });
 
   it('should throw JSON_PARSE_ERROR after three invalid JSON responses', async () => {
     const mockPromptBuilder = vi.fn().mockReturnValue('PROMPT');
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const mockGenerator = {
       generate: vi.fn().mockResolvedValue('INVALID_JSON'),
     };
@@ -89,9 +97,34 @@ describe('runLLMTask', () => {
         promptBuilder: mockPromptBuilder,
         traceId: 'trace-456',
       })
-    ).rejects.toThrow('JSON_PARSE_ERROR');
+    ).rejects.toMatchObject({
+      code: ERROR_CODES.JSON_PARSE_ERROR,
+      message: 'JSON_PARSE_ERROR',
+    });
 
     expect(mockGenerator.generate).toHaveBeenCalledTimes(3);
-    expect(warnSpy).toHaveBeenCalledTimes(2);
+    expect(errorSpy).toHaveBeenCalled();
+  });
+
+  it('should throw AppError for generator failures', async () => {
+    const mockPromptBuilder = vi.fn().mockReturnValue('PROMPT');
+    const mockGenerator = {
+      generate: vi.fn().mockRejectedValue(new Error('LLM failed')),
+    };
+
+    await expect(
+      runLLMTask({
+        schema: mockSchema,
+        template: mockTemplate,
+        context: mockContext,
+        input: mockInput,
+        generator: mockGenerator,
+        promptBuilder: mockPromptBuilder,
+        traceId: 'trace-999',
+      })
+    ).rejects.toMatchObject({
+      code: ERROR_CODES.LLM_ERROR,
+      message: 'LLM failed',
+    });
   });
 });
