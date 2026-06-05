@@ -1,10 +1,6 @@
 import Fastify, { type FastifyReply } from 'fastify';
 import { runGenerate } from '../core/runGenerate.ts';
 import { runTransform } from '../core/runTransform.ts';
-import {
-  GeminiContentEvaluator,
-  GeminiContentGenerator,
-} from '../core/geminiAdapter.ts';
 import { AppError, ERROR_CODES } from '../core/errors.ts';
 import type {
   ContentEvaluator,
@@ -221,6 +217,9 @@ export function buildServer({ generator, evaluator }: ServerDeps) {
 }
 
 const start = async () => {
+  const { GeminiContentEvaluator, GeminiContentGenerator } =
+    await import('../core/geminiAdapter.ts');
+
   const fastify = buildServer({
     generator: new GeminiContentGenerator(),
     evaluator: new GeminiContentEvaluator(),
